@@ -7,9 +7,9 @@ export interface FaultData {
 
 // List of CORS proxies to try in order
 const CORS_PROXIES = [
+  (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
   (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
   (url: string) => `https://cors-anywhere.herokuapp.com/${encodeURIComponent(url)}`,
-  (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
   (url: string) => `https://cors-proxy.htmldriven.com/?url=${encodeURIComponent(url)}`
 ];
 
@@ -32,7 +32,7 @@ export const fetchFaultData = async (): Promise<FaultData> => {
       
       if (response.ok) {
         const data = await response.json();
-        return validateAndReturnData(data);
+        return processApiResponse(data);
       }
     } catch (error) {
       console.log('Direct connection failed, will try proxies');
@@ -62,7 +62,7 @@ export const fetchFaultData = async (): Promise<FaultData> => {
       }
       
       const data = await response.json();
-      return validateAndReturnData(data);
+      return processApiResponse(data);
     } catch (error) {
       console.log(`Proxy ${i+1} error:`, error);
       lastError = error instanceof Error ? error : new Error(String(error));
@@ -73,15 +73,56 @@ export const fetchFaultData = async (): Promise<FaultData> => {
   throw lastError || new Error('All CORS proxies failed');
 };
 
-// Validate the data structure and return it
-function validateAndReturnData(data: any): FaultData {
-  if (!data || typeof data !== 'object' || !data.fault_count_5s || !data.fault_count_10s) {
+// Process and transform the API response into our expected format
+function processApiResponse(data: any): FaultData {
+  // Check if we have the expected main structure
+  if (!data || typeof data !== 'object') {
     throw new Error('Invalid data structure received');
   }
   
+  // The server may return data in different formats:
+  // 1. Direct format with fault_count_5s and fault_count_10s as top-level properties
+  if (data.fault_count_5s && data.fault_count_10s) {
+    return {
+      fault_count_5s: data.fault_count_5s,
+      fault_count_10s: data.fault_count_10s,
+      timestamp: data.timestamp || new Date().toISOString()
+    };
+  }
+  
+  // 2. Format where each key contains an object with fault_count properties
+  // Transform it into our expected format
+  const fault_count_5s: { [key: string]: number } = {};
+  const fault_count_10s: { [key: string]: number } = {};
+  let lastTimestamp = '';
+  
+  Object.keys(data).forEach(key => {
+    const item = data[key];
+    if (item && typeof item === 'object') {
+      if ('fault_count_5s' in item) {
+        fault_count_5s[key] = Number(item.fault_count_5s);
+      }
+      
+      if ('fault_count_10s' in item) {
+        fault_count_10s[key] = Number(item.fault_count_10s);
+      }
+      
+      if (item.last_timestamp && (!lastTimestamp || new Date(item.last_timestamp) > new Date(lastTimestamp))) {
+        lastTimestamp = item.last_timestamp;
+      }
+    }
+  });
+  
+  // Check if we managed to extract some data
+  if (Object.keys(fault_count_5s).length === 0 && Object.keys(fault_count_10s).length === 0) {
+    console.log('Could not extract fault counts from data:', data);
+    throw new Error('Failed to extract fault data');
+  }
+  
   return {
-    fault_count_5s: data.fault_count_5s,
-    fault_count_10s: data.fault_count_10s,
-    timestamp: data.timestamp || new Date().toISOString()
+    fault_count_5s,
+    fault_count_10s,
+    timestamp: lastTimestamp || new Date().toISOString()
   };
 }
+

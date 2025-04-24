@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { fetchFaultData, FaultData } from '../services/faultDataService';
 import { toast } from '@/components/ui/sonner';
@@ -12,19 +13,20 @@ interface TimeSeriesPoint {
 // Mock data to use when API is unavailable
 const generateMockData = (): FaultData => {
   const centers = ['center1', 'center2', 'center3', 'center4'];
-  const mockData: FaultData = {
-    fault_count_5s: {},
-    fault_count_10s: {},
-    timestamp: new Date().toISOString()
-  };
+  const fault_count_5s: { [key: string]: number } = {};
+  const fault_count_10s: { [key: string]: number } = {};
   
   // Generate random values for each center
   centers.forEach(center => {
-    mockData.fault_count_5s[center] = Math.floor(Math.random() * 10);
-    mockData.fault_count_10s[center] = Math.floor(Math.random() * 5);
+    fault_count_5s[center] = Math.floor(Math.random() * 10);
+    fault_count_10s[center] = Math.floor(Math.random() * 5);
   });
   
-  return mockData;
+  return {
+    fault_count_5s,
+    fault_count_10s,
+    timestamp: new Date().toISOString()
+  };
 };
 
 export const useFaultData = () => {
@@ -118,3 +120,4 @@ export const useFaultData = () => {
 
   return { timeSeriesData, error, isUsingMockData };
 };
+

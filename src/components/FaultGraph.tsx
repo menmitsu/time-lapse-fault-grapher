@@ -42,8 +42,8 @@ const FaultGraph = () => {
       <h2 className="text-2xl font-bold mb-4">Fault Count Time Series</h2>
       
       {isUsingMockData && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertTriangle className="h-4 w-4" />
+        <Alert variant="warning" className="mb-4 border-amber-500 bg-amber-50">
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
           <AlertTitle>Connection Issue</AlertTitle>
           <AlertDescription>
             Could not connect to the data source. Displaying mock data for demonstration purposes.
