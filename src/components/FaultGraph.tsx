@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useFaultData } from '../hooks/useFaultData';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
+import { AlertTriangle } from 'lucide-react';
 
 const colors = {
   '5s': '#10B981',
@@ -43,7 +43,7 @@ const FaultGraph = () => {
       
       {isUsingMockData && (
         <Alert variant="destructive" className="mb-4">
-          <ExclamationTriangleIcon className="h-4 w-4" />
+          <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Connection Issue</AlertTitle>
           <AlertDescription>
             Could not connect to the data source. Displaying mock data for demonstration purposes.
