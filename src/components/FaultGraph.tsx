@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useFaultData } from '../hooks/useFaultData';
@@ -96,16 +97,20 @@ const FaultGraph = () => {
               }}
             />
             <ChartTooltip
-              content={({ active, payload }) => {
+              content={(props) => {
+                const { active, payload } = props;
                 if (!active || !payload?.length) return null;
+                
                 return (
                   <ChartTooltipContent
                     className="bg-white/95 dark:bg-gray-950/95 shadow-lg p-2"
-                    items={payload.map((entry: any) => ({
-                      label: entry.name,
-                      value: entry.value,
-                      color: entry.color
-                    }))}
+                    formatter={(value, name) => (
+                      <div className="flex items-center justify-between gap-2">
+                        <span>{name}</span>
+                        <span className="font-mono font-medium">{value}</span>
+                      </div>
+                    )}
+                    {...props}
                   />
                 );
               }}
