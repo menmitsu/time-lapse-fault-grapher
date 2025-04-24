@@ -9,6 +9,24 @@ interface TimeSeriesPoint {
   type: '5s' | '10s';
 }
 
+// Mock data to use when API is unavailable
+const generateMockData = (): FaultData => {
+  const centers = ['center1', 'center2', 'center3', 'center4'];
+  const mockData: FaultData = {
+    fault_count_5s: {},
+    fault_count_10s: {},
+    timestamp: new Date().toISOString()
+  };
+  
+  // Generate random values for each center
+  centers.forEach(center => {
+    mockData.fault_count_5s[center] = Math.floor(Math.random() * 10);
+    mockData.fault_count_10s[center] = Math.floor(Math.random() * 5);
+  });
+  
+  return mockData;
+};
+
 export const useFaultData = () => {
   const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesPoint[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -23,18 +41,27 @@ export const useFaultData = () => {
     const fetchData = async () => {
       try {
         console.log('Attempting to fetch fault data...'); // Added logging
-        const data = await fetchFaultData();
-        console.log('Fault Data Retrieved:', data); // Log the retrieved data
         
-        // Check if we're using mock data by testing if the timestamp is recent
-        const mockDataDetected = !data.timestamp || new Date(data.timestamp).getTime() > Date.now() - 100;
+        let data: FaultData;
         
-        if (mockDataDetected && !isUsingMockData) {
-          setIsUsingMockData(true);
-          toast.warning('Using mock data - API connection failed');
-        } else if (!mockDataDetected && isUsingMockData) {
-          setIsUsingMockData(false);
-          toast.success('API connection restored');
+        try {
+          data = await fetchFaultData();
+          console.log('Fault Data Retrieved:', data); // Log the retrieved data
+          
+          if (isUsingMockData) {
+            setIsUsingMockData(false);
+            toast.success('API connection restored');
+          }
+        } catch (fetchError) {
+          console.error('API fetch failed, using mock data instead:', fetchError);
+          
+          if (!isUsingMockData) {
+            setIsUsingMockData(true);
+            toast.warning('Using mock data - API connection failed');
+          }
+          
+          // Use mock data when API fails
+          data = generateMockData();
         }
         
         const timestamp = new Date();
@@ -73,22 +100,10 @@ export const useFaultData = () => {
         }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to fetch data';
-        console.error('Fetch error:', errorMessage);
+        console.error('General error:', errorMessage);
         
         if (isMounted) {
           setError(errorMessage);
-          
-          // Implement exponential backoff for retries
-          if (retryCount < maxRetries) {
-            retryCount++;
-            const backoffTime = retryDelay * Math.pow(2, retryCount - 1);
-            console.log(`Retrying in ${backoffTime}ms (attempt ${retryCount})`);
-            
-            setTimeout(fetchData, backoffTime);
-          } else if (!isUsingMockData) {
-            setIsUsingMockData(true);
-            toast.error('Connection failed after multiple retries. Using mock data.');
-          }
         }
       }
     };

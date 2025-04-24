@@ -10,9 +10,10 @@ export const fetchFaultData = async (): Promise<FaultData> => {
   const isHttps = window.location.protocol === 'https:';
   const endpoint = '34.93.233.94:5020/get_frame_timestamp_stats';
   
-  // Use a CORS proxy if we're in HTTPS mode to avoid mixed content blocking
+  // Use a different CORS proxy if we're in HTTPS mode to avoid mixed content blocking
+  // Try multiple proxy options to improve chances of success
   const url = isHttps 
-    ? `https://corsproxy.io/?${encodeURIComponent(`http://${endpoint}`)}` 
+    ? `https://cors-anywhere.herokuapp.com/${encodeURIComponent(`http://${endpoint}`)}` 
     : `http://${endpoint}`;
   
   console.log(`Fetching data from: ${url}`);
@@ -20,7 +21,11 @@ export const fetchFaultData = async (): Promise<FaultData> => {
   const response = await fetch(url, {
     method: 'GET',
     headers: {
-      'Accept': 'application/json'
+      'Accept': 'application/json',
+      // Some proxies require the Origin header to be present
+      'Origin': window.location.origin,
+      // Add a specific header required by cors-anywhere
+      'X-Requested-With': 'XMLHttpRequest'
     }
   });
 
