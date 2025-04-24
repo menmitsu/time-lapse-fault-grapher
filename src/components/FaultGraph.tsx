@@ -1,10 +1,9 @@
 import { useMemo } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useFaultData } from '../hooks/useFaultData';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
-import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
+import TimeseriesGraph from './TimeseriesGraph';
 
 const FaultGraph = () => {
   const { timeSeriesData, error, isUsingMockData } = useFaultData();
@@ -43,17 +42,10 @@ const FaultGraph = () => {
     );
   }
 
-  const colors = {
-    '5s': ['#10B981', '#059669', '#047857', '#065F46'],
-    '10s': ['#3B82F6', '#2563EB', '#1D4ED8', '#1E40AF']
-  };
-
   return (
-    <div className="w-full h-[800px] p-4 bg-white rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold mb-4">Fault Count Timeline</h2>
-      
+    <div className="w-full space-y-6">
       {isUsingMockData && (
-        <Alert variant="destructive" className="mb-4 border-amber-500 bg-amber-50">
+        <Alert variant="destructive" className="border-amber-500 bg-amber-50">
           <AlertTriangle className="h-4 w-4 text-amber-500" />
           <AlertTitle>Connection Issue</AlertTitle>
           <AlertDescription>
@@ -62,102 +54,17 @@ const FaultGraph = () => {
         </Alert>
       )}
       
-      <ChartContainer 
-        className="h-[90%]"
-        config={{
-          timeline: {
-            theme: {
-              light: 'hsl(var(--primary))',
-              dark: 'hsl(var(--primary))'
-            }
-          }
-        }}
-      >
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={formattedData}
-            margin={{ top: 20, right: 30, left: 100, bottom: 80 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis 
-              dataKey="timestamp"
-              angle={-45}
-              textAnchor="end"
-              height={100}
-              interval={0}
-            />
-            <YAxis 
-              width={90}
-              label={{ 
-                value: 'Fault Count',
-                angle: -90,
-                position: 'insideLeft',
-                offset: -10
-              }}
-            />
-            <Tooltip 
-              content={(props) => {
-                const { active, payload } = props;
-                if (!active || !payload?.length) return null;
-                
-                return (
-                  <div className="bg-white/95 dark:bg-gray-950/95 shadow-lg p-2 rounded-md border border-gray-200">
-                    <p className="font-medium text-xs mb-1">{props.label}</p>
-                    {payload.map((entry: any, index: number) => (
-                      <div key={`item-${index}`} className="flex items-center justify-between gap-2 text-xs">
-                        <span style={{ color: entry.color }}>{entry.name}</span>
-                        <span className="font-mono font-medium">{entry.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                );
-              }}
-            />
-            {uniqueLocations.map((location, idx) => (
-              <>
-                <Line
-                  key={`${location}_5s`}
-                  type="monotone"
-                  dataKey={`${location}_5s`}
-                  name={`${location} (5s)`}
-                  stroke={colors['5s'][idx % colors['5s'].length]}
-                  strokeWidth={2}
-                  dot={false}
-                  label={{
-                    position: 'left',
-                    offset: 10,
-                    fill: colors['5s'][idx % colors['5s'].length],
-                    fontSize: 12,
-                    content: (props: any) => {
-                      // Only show label for the first data point
-                      return props.index === 0 ? `${location} (5s)` : '';
-                    }
-                  }}
-                />
-                <Line
-                  key={`${location}_10s`}
-                  type="monotone"
-                  dataKey={`${location}_10s`}
-                  name={`${location} (10s)`}
-                  stroke={colors['10s'][idx % colors['10s'].length]}
-                  strokeWidth={2}
-                  dot={false}
-                  label={{
-                    position: 'left',
-                    offset: 25,
-                    fill: colors['10s'][idx % colors['10s'].length],
-                    fontSize: 12,
-                    content: (props: any) => {
-                      // Only show label for the first data point
-                      return props.index === 0 ? `${location} (10s)` : '';
-                    }
-                  }}
-                />
-              </>
-            ))}
-          </LineChart>
-        </ResponsiveContainer>
-      </ChartContainer>
+      <TimeseriesGraph 
+        data={formattedData}
+        type="5s"
+        locations={uniqueLocations}
+      />
+      
+      <TimeseriesGraph 
+        data={formattedData}
+        type="10s"
+        locations={uniqueLocations}
+      />
     </div>
   );
 };
