@@ -30,7 +30,7 @@ const FaultGraph = () => {
     );
   }, [timeSeriesData]);
 
-  // Get unique locations for creating lines
+  // Get unique locations for creating lines with full names
   const uniqueLocations = useMemo(() => 
     Array.from(new Set(timeSeriesData.map(point => point.center))),
     [timeSeriesData]
@@ -45,7 +45,7 @@ const FaultGraph = () => {
   }
 
   return (
-    <div className="w-full h-[600px] p-4 bg-white rounded-lg shadow-lg">
+    <div className="w-full h-[800px] p-4 bg-white rounded-lg shadow-lg">
       <h2 className="text-2xl font-bold mb-4">Fault Count Timeline</h2>
       
       {isUsingMockData && (
@@ -61,7 +61,7 @@ const FaultGraph = () => {
       <ResponsiveContainer width="100%" height="90%">
         <LineChart
           data={formattedData}
-          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+          margin={{ top: 20, right: 30, left: 20, bottom: 80 }} // Increased bottom margin for x-axis labels
         >
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis 
@@ -73,14 +73,20 @@ const FaultGraph = () => {
           />
           <YAxis />
           <Tooltip />
-          <Legend />
-          {uniqueLocations.map((location, index) => (
+          <Legend 
+            layout="horizontal" 
+            verticalAlign="bottom" 
+            align="center" 
+            height={60} 
+            wrapperStyle={{ paddingTop: '20px' }}
+          />
+          {uniqueLocations.map((location) => (
             <>
               <Line
                 key={`${location}_5s`}
                 type="monotone"
                 dataKey={`${location}_5s`}
-                name={`${location.split('_')[0]} (5s)`}
+                name={`${location} (5s)`}
                 stroke="#10B981"
                 strokeOpacity={0.7}
                 dot={false}
@@ -89,7 +95,7 @@ const FaultGraph = () => {
                 key={`${location}_10s`}
                 type="monotone"
                 dataKey={`${location}_10s`}
-                name={`${location.split('_')[0]} (10s)`}
+                name={`${location} (10s)`}
                 stroke="#3B82F6"
                 strokeOpacity={0.7}
                 dot={false}
