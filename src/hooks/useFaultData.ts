@@ -37,13 +37,11 @@ export const useFaultData = () => {
     let isMounted = true;
     let retryCount = 0;
     const MAX_RETRIES = 3;
-    const FIVE_MINUTES = 5 * 60 * 1000; // 5 minutes in milliseconds
-    
+    const FIVE_MINUTES = 5 * 60 * 1000;
+
     const fetchData = async () => {
       while (retryCount < MAX_RETRIES) {
         try {
-          console.log(`Attempting to fetch fault data... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
-          
           let data: FaultData;
           
           try {
@@ -55,9 +53,7 @@ export const useFaultData = () => {
               toast.success('API connection restored');
             }
             
-            // Reset retry count on successful fetch
             retryCount = 0;
-            break; // Exit retry loop on success
           } catch (fetchError) {
             retryCount++;
             console.error(`API fetch failed (attempt ${retryCount}/${MAX_RETRIES}):`, fetchError);
@@ -65,22 +61,18 @@ export const useFaultData = () => {
             if (retryCount === MAX_RETRIES) {
               if (!isUsingMockData) {
                 setIsUsingMockData(true);
-                toast.warning('Using mock data - API connection failed after 3 attempts');
+                toast.warning('Using mock data - Database connection failed after 3 attempts');
               }
-              
-              // Use mock data when all retries fail
               data = generateMockData();
             } else {
-              // Wait 2 seconds before retrying
               await new Promise(resolve => setTimeout(resolve, 2000));
-              continue; // Try again
+              continue;
             }
           }
-          
+
           const timestamp = new Date();
-          
           const newPoints: TimeSeriesPoint[] = [];
-          
+
           // Process 5s fault counts
           Object.entries(data.fault_count_5s).forEach(([center, value]) => {
             newPoints.push({
@@ -90,7 +82,7 @@ export const useFaultData = () => {
               type: '5s'
             });
           });
-          
+
           // Process 10s fault counts
           Object.entries(data.fault_count_10s).forEach(([center, value]) => {
             newPoints.push({
@@ -100,18 +92,16 @@ export const useFaultData = () => {
               type: '10s'
             });
           });
-          
+
           if (isMounted) {
             setTimeSeriesData(current => {
-              // Keep only last 60 data points (5 hours worth of data with 5-minute intervals)
               const newData = [...current, ...newPoints];
-              return newData.slice(-144); // 12 points per hour * 12 hours
+              return newData.slice(-144);
             });
-            
             setError(null);
           }
-          
-          break; // Exit retry loop on successful processing
+
+          break;
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'Failed to fetch data';
           console.error('General error:', errorMessage);
