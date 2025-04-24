@@ -1,32 +1,40 @@
 
 import { useMemo } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useFaultData } from '../hooks/useFaultData';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
+import { format } from 'date-fns';
 
 const FaultGraph = () => {
   const { timeSeriesData, error, isUsingMockData } = useFaultData();
 
   const formattedData = useMemo(() => {
-    // Get unique locations
-    const uniqueLocations = Array.from(
-      new Set(timeSeriesData.map(point => point.center))
-    );
+    // Group data points by timestamp
+    const groupedByTime = timeSeriesData.reduce((acc, point) => {
+      const timeKey = format(point.timestamp, 'HH:mm:ss');
+      if (!acc[timeKey]) {
+        acc[timeKey] = { timestamp: timeKey };
+      }
+      
+      const locationKey = `${point.center}_${point.type}`;
+      acc[timeKey][locationKey] = point.value;
+      
+      return acc;
+    }, {} as Record<string, any>);
 
-    return uniqueLocations.map(location => {
-      return {
-        location: location.split('_')[0], // Only show the ID part
-        location_full: location, // Keep full name for tooltip
-        fault_count_5s: timeSeriesData.find(
-          point => point.center === location && point.type === '5s'
-        )?.value || 0,
-        fault_count_10s: timeSeriesData.find(
-          point => point.center === location && point.type === '10s'
-        )?.value || 0,
-      };
-    }).sort((a, b) => b.fault_count_5s + b.fault_count_10s - (a.fault_count_5s + a.fault_count_10s));
+    // Convert to array and sort by timestamp
+    return Object.values(groupedByTime).sort((a, b) => 
+      new Date('1970/01/01 ' + a.timestamp).getTime() - 
+      new Date('1970/01/01 ' + b.timestamp).getTime()
+    );
   }, [timeSeriesData]);
+
+  // Get unique locations for creating lines
+  const uniqueLocations = useMemo(() => 
+    Array.from(new Set(timeSeriesData.map(point => point.center))),
+    [timeSeriesData]
+  );
 
   if (error && !isUsingMockData) {
     return (
@@ -38,7 +46,7 @@ const FaultGraph = () => {
 
   return (
     <div className="w-full h-[600px] p-4 bg-white rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold mb-4">Fault Count by Location</h2>
+      <h2 className="text-2xl font-bold mb-4">Fault Count Timeline</h2>
       
       {isUsingMockData && (
         <Alert variant="destructive" className="mb-4 border-amber-500 bg-amber-50">
@@ -51,29 +59,44 @@ const FaultGraph = () => {
       )}
       
       <ResponsiveContainer width="100%" height="90%">
-        <BarChart 
+        <LineChart
           data={formattedData}
           margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis 
-            dataKey="location" 
+            dataKey="timestamp"
             angle={-45}
             textAnchor="end"
             height={100}
             interval={0}
           />
           <YAxis />
-          <Tooltip 
-            labelFormatter={(value, entry) => {
-              const item = entry[0]?.payload;
-              return item ? `Location: ${item.location_full}` : value;
-            }}
-          />
+          <Tooltip />
           <Legend />
-          <Bar dataKey="fault_count_5s" name="5s Faults" fill="#10B981" />
-          <Bar dataKey="fault_count_10s" name="10s Faults" fill="#3B82F6" />
-        </BarChart>
+          {uniqueLocations.map((location, index) => (
+            <>
+              <Line
+                key={`${location}_5s`}
+                type="monotone"
+                dataKey={`${location}_5s`}
+                name={`${location.split('_')[0]} (5s)`}
+                stroke="#10B981"
+                strokeOpacity={0.7}
+                dot={false}
+              />
+              <Line
+                key={`${location}_10s`}
+                type="monotone"
+                dataKey={`${location}_10s`}
+                name={`${location.split('_')[0]} (10s)`}
+                stroke="#3B82F6"
+                strokeOpacity={0.7}
+                dot={false}
+              />
+            </>
+          ))}
+        </LineChart>
       </ResponsiveContainer>
     </div>
   );
