@@ -5,19 +5,19 @@ import { useFaultData } from '../hooks/useFaultData';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 
-const TARGET_LOCATIONS = ['YNQR6_sector65Emerald123', '0MNYH_mayfieldGarden123'];
-
 const FaultGraph = () => {
   const { timeSeriesData, error, isUsingMockData } = useFaultData();
 
   const formattedData = useMemo(() => {
-    return TARGET_LOCATIONS.map(location => {
-      const locationData = timeSeriesData.find(
-        point => `${point.type}_${point.center}` === location
-      );
-      
+    // Get unique locations
+    const uniqueLocations = Array.from(
+      new Set(timeSeriesData.map(point => point.center))
+    );
+
+    return uniqueLocations.map(location => {
       return {
         location: location.split('_')[0], // Only show the ID part
+        location_full: location, // Keep full name for tooltip
         fault_count_5s: timeSeriesData.find(
           point => point.center === location && point.type === '5s'
         )?.value || 0,
@@ -25,7 +25,7 @@ const FaultGraph = () => {
           point => point.center === location && point.type === '10s'
         )?.value || 0,
       };
-    });
+    }).sort((a, b) => b.fault_count_5s + b.fault_count_10s - (a.fault_count_5s + a.fault_count_10s));
   }, [timeSeriesData]);
 
   if (error && !isUsingMockData) {
@@ -38,7 +38,7 @@ const FaultGraph = () => {
 
   return (
     <div className="w-full h-[600px] p-4 bg-white rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold mb-4">Fault Count Comparison</h2>
+      <h2 className="text-2xl font-bold mb-4">Fault Count by Location</h2>
       
       {isUsingMockData && (
         <Alert variant="destructive" className="mb-4 border-amber-500 bg-amber-50">
@@ -51,11 +51,25 @@ const FaultGraph = () => {
       )}
       
       <ResponsiveContainer width="100%" height="90%">
-        <BarChart data={formattedData}>
+        <BarChart 
+          data={formattedData}
+          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+        >
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="location" />
+          <XAxis 
+            dataKey="location" 
+            angle={-45}
+            textAnchor="end"
+            height={100}
+            interval={0}
+          />
           <YAxis />
-          <Tooltip />
+          <Tooltip 
+            labelFormatter={(value, entry) => {
+              const item = entry[0]?.payload;
+              return item ? `Location: ${item.location_full}` : value;
+            }}
+          />
           <Legend />
           <Bar dataKey="fault_count_5s" name="5s Faults" fill="#10B981" />
           <Bar dataKey="fault_count_10s" name="10s Faults" fill="#3B82F6" />
