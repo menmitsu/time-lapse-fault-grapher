@@ -1,32 +1,31 @@
 
 import { useMemo } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { useFaultData } from '../hooks/useFaultData';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 
-const colors = {
-  '5s': '#10B981',
-  '10s': '#3B82F6'
-};
+const TARGET_LOCATIONS = ['YNQR6_sector65Emerald123', '0MNYH_mayfieldGarden123'];
 
 const FaultGraph = () => {
   const { timeSeriesData, error, isUsingMockData } = useFaultData();
 
   const formattedData = useMemo(() => {
-    const grouped = timeSeriesData.reduce((acc, point) => {
-      const key = point.timestamp.toISOString();
-      if (!acc[key]) {
-        acc[key] = {
-          timestamp: point.timestamp,
-        };
-      }
-      const identifier = `${point.type}_${point.center}`;
-      acc[key][identifier] = point.value;
-      return acc;
-    }, {} as Record<string, any>);
-
-    return Object.values(grouped);
+    return TARGET_LOCATIONS.map(location => {
+      const locationData = timeSeriesData.find(
+        point => `${point.type}_${point.center}` === location
+      );
+      
+      return {
+        location: location.split('_')[0], // Only show the ID part
+        fault_count_5s: timeSeriesData.find(
+          point => point.center === location && point.type === '5s'
+        )?.value || 0,
+        fault_count_10s: timeSeriesData.find(
+          point => point.center === location && point.type === '10s'
+        )?.value || 0,
+      };
+    });
   }, [timeSeriesData]);
 
   if (error && !isUsingMockData) {
@@ -39,7 +38,7 @@ const FaultGraph = () => {
 
   return (
     <div className="w-full h-[600px] p-4 bg-white rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold mb-4">Fault Count Time Series</h2>
+      <h2 className="text-2xl font-bold mb-4">Fault Count Comparison</h2>
       
       {isUsingMockData && (
         <Alert variant="destructive" className="mb-4 border-amber-500 bg-amber-50">
@@ -52,35 +51,15 @@ const FaultGraph = () => {
       )}
       
       <ResponsiveContainer width="100%" height="90%">
-        <LineChart data={formattedData}>
+        <BarChart data={formattedData}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis
-            dataKey="timestamp"
-            tickFormatter={(time) => new Date(time).toLocaleTimeString()}
-          />
+          <XAxis dataKey="location" />
           <YAxis />
-          <Tooltip
-            labelFormatter={(label) => new Date(label).toLocaleTimeString()}
-          />
+          <Tooltip />
           <Legend />
-          {timeSeriesData.length > 0 &&
-            Array.from(
-              new Set(
-                timeSeriesData.map(
-                  (point) => `${point.type}_${point.center}`
-                )
-              )
-            ).map((key) => (
-              <Line
-                key={key}
-                type="monotone"
-                dataKey={key}
-                stroke={colors[key.split('_')[0] as '5s' | '10s']}
-                dot={false}
-                name={`${key.split('_')[1]} (${key.split('_')[0]})`}
-              />
-            ))}
-        </LineChart>
+          <Bar dataKey="fault_count_5s" name="5s Faults" fill="#10B981" />
+          <Bar dataKey="fault_count_10s" name="10s Faults" fill="#3B82F6" />
+        </BarChart>
       </ResponsiveContainer>
     </div>
   );
