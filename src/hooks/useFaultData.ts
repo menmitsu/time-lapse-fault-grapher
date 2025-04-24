@@ -22,7 +22,9 @@ export const useFaultData = () => {
     
     const fetchData = async () => {
       try {
+        console.log('Attempting to fetch fault data...'); // Added logging
         const data = await fetchFaultData();
+        console.log('Fault Data Retrieved:', data); // Log the retrieved data
         
         // Check if we're using mock data by testing if the timestamp is recent
         const mockDataDetected = !data.timestamp || new Date(data.timestamp).getTime() > Date.now() - 100;
