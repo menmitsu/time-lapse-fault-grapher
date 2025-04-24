@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useFaultData } from '../hooks/useFaultData';
@@ -77,7 +76,7 @@ const FaultGraph = () => {
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={formattedData}
-            margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+            margin={{ top: 20, right: 30, left: 100, bottom: 80 }}
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
@@ -87,7 +86,15 @@ const FaultGraph = () => {
               height={100}
               interval={0}
             />
-            <YAxis />
+            <YAxis 
+              width={90}
+              label={{ 
+                value: 'Fault Count',
+                angle: -90,
+                position: 'insideLeft',
+                offset: -10
+              }}
+            />
             <ChartTooltip
               content={({ active, payload }) => {
                 if (!active || !payload?.length) return null;
@@ -113,6 +120,16 @@ const FaultGraph = () => {
                   stroke={colors['5s'][idx % colors['5s'].length]}
                   strokeWidth={2}
                   dot={false}
+                  label={{
+                    position: 'left',
+                    offset: 10,
+                    fill: colors['5s'][idx % colors['5s'].length],
+                    fontSize: 12,
+                    content: (props: any) => {
+                      // Only show label for the first data point
+                      return props.index === 0 ? `${location} (5s)` : '';
+                    }
+                  }}
                 />
                 <Line
                   key={`${location}_10s`}
@@ -122,6 +139,16 @@ const FaultGraph = () => {
                   stroke={colors['10s'][idx % colors['10s'].length]}
                   strokeWidth={2}
                   dot={false}
+                  label={{
+                    position: 'left',
+                    offset: 25,
+                    fill: colors['10s'][idx % colors['10s'].length],
+                    fontSize: 12,
+                    content: (props: any) => {
+                      // Only show label for the first data point
+                      return props.index === 0 ? `${location} (10s)` : '';
+                    }
+                  }}
                 />
               </>
             ))}
