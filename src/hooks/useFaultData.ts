@@ -34,9 +34,6 @@ export const useFaultData = () => {
 
   useEffect(() => {
     let isMounted = true;
-    let retryCount = 0;
-    const maxRetries = 3;
-    const retryDelay = 2000; // 2 seconds
     
     const fetchData = async () => {
       try {
@@ -96,7 +93,6 @@ export const useFaultData = () => {
           });
           
           setError(null);
-          retryCount = 0; // Reset retry count on success
         }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to fetch data';
