@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -20,7 +21,7 @@ const colors = [
 
 const TimeseriesGraph = ({ data, type, locations }: TimeseriesGraphProps) => {
   return (
-    <div className="w-full h-[800px] bg-white rounded-lg shadow-lg p-4">
+    <div className="w-full h-[1600px] bg-white rounded-lg shadow-lg p-4">
       <h3 className="text-xl font-semibold mb-4">
         Fault Count Timeline ({type})
       </h3>
@@ -51,11 +52,14 @@ const TimeseriesGraph = ({ data, type, locations }: TimeseriesGraphProps) => {
               const { active, payload, label } = props;
               if (!active || !payload?.length) return null;
               
+              // Sort payload by value in descending order
+              const sortedPayload = [...payload].sort((a, b) => b.value - a.value);
+              
               return (
                 <div className="bg-white/95 dark:bg-gray-950/95 shadow-lg p-4 rounded-md border border-gray-200">
                   <p className="font-medium text-sm mb-2">{label}</p>
                   <div className="max-h-[400px] overflow-y-auto">
-                    {payload.map((entry: any, index: number) => (
+                    {sortedPayload.map((entry: any, index: number) => (
                       <div key={`item-${index}`} className="flex items-center justify-between gap-4 text-sm py-1">
                         <span style={{ color: entry.color }}>{entry.name}</span>
                         <span className="font-mono font-medium">{entry.value}</span>
