@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -28,7 +27,7 @@ const TimeseriesGraph = ({ data, type, locations }: TimeseriesGraphProps) => {
       <ResponsiveContainer width="100%" height="90%">
         <LineChart
           data={data}
-          margin={{ top: 20, right: 120, left: 100, bottom: 80 }}
+          margin={{ top: 20, right: 200, left: 100, bottom: 80 }}
         >
           <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
           <XAxis 
@@ -78,11 +77,25 @@ const TimeseriesGraph = ({ data, type, locations }: TimeseriesGraphProps) => {
               dot={false}
               label={{
                 position: 'right',
-                offset: 10,
+                offset: 15,
                 fill: colors[idx % colors.length],
                 fontSize: 12,
                 content: (props: any) => {
-                  return props.index === data.length - 1 ? location : '';
+                  if (props.index === data.length - 1) {
+                    return (
+                      <text
+                        x={props.x + 5}
+                        y={props.y}
+                        fill={colors[idx % colors.length]}
+                        fontSize={12}
+                        textAnchor="start"
+                        dominantBaseline="middle"
+                      >
+                        {location} ({props.value})
+                      </text>
+                    );
+                  }
+                  return '';
                 }
               }}
             />
