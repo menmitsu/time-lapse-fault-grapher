@@ -52,8 +52,13 @@ const TimeseriesGraph = ({ data, type, locations }: TimeseriesGraphProps) => {
               const { active, payload, label } = props;
               if (!active || !payload?.length) return null;
               
-              // Sort payload by value in descending order
-              const sortedPayload = [...payload].sort((a, b) => b.value - a.value);
+              // Sort payload by value in descending order - fixed TypeScript error
+              // by ensuring values are treated as numbers
+              const sortedPayload = [...payload].sort((a, b) => {
+                const valueA = typeof a.value === 'number' ? a.value : 0;
+                const valueB = typeof b.value === 'number' ? b.value : 0;
+                return valueB - valueA;
+              });
               
               return (
                 <div className="bg-white/95 dark:bg-gray-950/95 shadow-lg p-4 rounded-md border border-gray-200">
