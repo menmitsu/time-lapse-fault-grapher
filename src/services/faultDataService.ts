@@ -7,7 +7,8 @@ export interface FaultData {
 
 export const fetchFaultData = async (): Promise<FaultData> => {
   try {
-    const response = await fetch('http://34.93.233.94:5020/get_frame_timestamp_stats', {
+    // Changed from http to https
+    const response = await fetch('https://34.93.233.94:5020/get_frame_timestamp_stats', {
       method: 'GET',
       mode: 'cors',
       headers: {
