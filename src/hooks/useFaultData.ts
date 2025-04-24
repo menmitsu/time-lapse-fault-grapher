@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { fetchFaultData, FaultData } from '../services/faultDataService';
 import { toast } from '@/components/ui/sonner';
@@ -109,8 +108,8 @@ export const useFaultData = () => {
     // Initial fetch
     fetchData();
 
-    // Set up intervals for data fetching (every 5 seconds)
-    const intervalId = setInterval(fetchData, 5000);
+    // Update every minute instead of every 5 seconds
+    const intervalId = setInterval(fetchData, 60000);
 
     return () => {
       isMounted = false;
@@ -120,4 +119,3 @@ export const useFaultData = () => {
 
   return { timeSeriesData, error, isUsingMockData };
 };
-

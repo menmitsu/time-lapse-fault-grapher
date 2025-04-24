@@ -1,10 +1,11 @@
 
 import { useMemo } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useFaultData } from '../hooks/useFaultData';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 const FaultGraph = () => {
   const { timeSeriesData, error, isUsingMockData } = useFaultData();
@@ -30,7 +31,6 @@ const FaultGraph = () => {
     );
   }, [timeSeriesData]);
 
-  // Get unique locations for creating lines with full names
   const uniqueLocations = useMemo(() => 
     Array.from(new Set(timeSeriesData.map(point => point.center))),
     [timeSeriesData]
@@ -43,6 +43,11 @@ const FaultGraph = () => {
       </div>
     );
   }
+
+  const colors = {
+    '5s': ['#10B981', '#059669', '#047857', '#065F46'],
+    '10s': ['#3B82F6', '#2563EB', '#1D4ED8', '#1E40AF']
+  };
 
   return (
     <div className="w-full h-[800px] p-4 bg-white rounded-lg shadow-lg">
@@ -58,52 +63,71 @@ const FaultGraph = () => {
         </Alert>
       )}
       
-      <ResponsiveContainer width="100%" height="90%">
-        <LineChart
-          data={formattedData}
-          margin={{ top: 20, right: 30, left: 20, bottom: 80 }} // Increased bottom margin for x-axis labels
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis 
-            dataKey="timestamp"
-            angle={-45}
-            textAnchor="end"
-            height={100}
-            interval={0}
-          />
-          <YAxis />
-          <Tooltip />
-          <Legend 
-            layout="horizontal" 
-            verticalAlign="bottom" 
-            align="center" 
-            height={60} 
-            wrapperStyle={{ paddingTop: '20px' }}
-          />
-          {uniqueLocations.map((location) => (
-            <>
-              <Line
-                key={`${location}_5s`}
-                type="monotone"
-                dataKey={`${location}_5s`}
-                name={`${location} (5s)`}
-                stroke="#10B981"
-                strokeOpacity={0.7}
-                dot={false}
-              />
-              <Line
-                key={`${location}_10s`}
-                type="monotone"
-                dataKey={`${location}_10s`}
-                name={`${location} (10s)`}
-                stroke="#3B82F6"
-                strokeOpacity={0.7}
-                dot={false}
-              />
-            </>
-          ))}
-        </LineChart>
-      </ResponsiveContainer>
+      <ChartContainer 
+        className="h-[90%]"
+        config={{
+          timeline: {
+            theme: {
+              light: 'hsl(var(--primary))',
+              dark: 'hsl(var(--primary))'
+            }
+          }
+        }}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={formattedData}
+            margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis 
+              dataKey="timestamp"
+              angle={-45}
+              textAnchor="end"
+              height={100}
+              interval={0}
+            />
+            <YAxis />
+            <ChartTooltip
+              content={({ active, payload }) => {
+                if (!active || !payload?.length) return null;
+                return (
+                  <ChartTooltipContent
+                    className="bg-white/95 dark:bg-gray-950/95 shadow-lg p-2"
+                    items={payload.map((entry: any) => ({
+                      label: entry.name,
+                      value: entry.value,
+                      color: entry.color
+                    }))}
+                  />
+                );
+              }}
+            />
+            {uniqueLocations.map((location, idx) => (
+              <>
+                <Line
+                  key={`${location}_5s`}
+                  type="monotone"
+                  dataKey={`${location}_5s`}
+                  name={`${location} (5s)`}
+                  stroke={colors['5s'][idx % colors['5s'].length]}
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Line
+                  key={`${location}_10s`}
+                  type="monotone"
+                  dataKey={`${location}_10s`}
+                  name={`${location} (10s)`}
+                  stroke={colors['10s'][idx % colors['10s'].length]}
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </>
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </ChartContainer>
     </div>
   );
 };
