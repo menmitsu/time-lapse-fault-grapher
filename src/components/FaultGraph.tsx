@@ -1,11 +1,10 @@
-
 import { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useFaultData } from '../hooks/useFaultData';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
 
 const FaultGraph = () => {
   const { timeSeriesData, error, isUsingMockData } = useFaultData();
@@ -96,22 +95,21 @@ const FaultGraph = () => {
                 offset: -10
               }}
             />
-            <ChartTooltip
+            <Tooltip 
               content={(props) => {
                 const { active, payload } = props;
                 if (!active || !payload?.length) return null;
                 
                 return (
-                  <ChartTooltipContent
-                    className="bg-white/95 dark:bg-gray-950/95 shadow-lg p-2"
-                    formatter={(value, name) => (
-                      <div className="flex items-center justify-between gap-2">
-                        <span>{name}</span>
-                        <span className="font-mono font-medium">{value}</span>
+                  <div className="bg-white/95 dark:bg-gray-950/95 shadow-lg p-2 rounded-md border border-gray-200">
+                    <p className="font-medium text-xs mb-1">{props.label}</p>
+                    {payload.map((entry: any, index: number) => (
+                      <div key={`item-${index}`} className="flex items-center justify-between gap-2 text-xs">
+                        <span style={{ color: entry.color }}>{entry.name}</span>
+                        <span className="font-mono font-medium">{entry.value}</span>
                       </div>
-                    )}
-                    {...props}
-                  />
+                    ))}
+                  </div>
                 );
               }}
             />
