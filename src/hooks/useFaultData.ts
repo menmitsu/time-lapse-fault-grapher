@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { fetchFaultData, FaultData } from '../services/faultDataService';
 import { toast } from '@/components/ui/sonner';
@@ -9,14 +10,16 @@ interface TimeSeriesPoint {
   type: '5s' | '10s';
 }
 
+// Define centers at module scope so it's available throughout the file
+const CENTERS = ['center1', 'center2', 'center3', 'center4'];
+
 // Mock data to use when API is unavailable
 const generateMockData = (): FaultData => {
-  const centers = ['center1', 'center2', 'center3', 'center4'];
   const fault_count_5s: { [key: string]: number } = {};
   const fault_count_10s: { [key: string]: number } = {};
   
   // Generate random values for each center
-  centers.forEach(center => {
+  CENTERS.forEach(center => {
     fault_count_5s[center] = Math.floor(Math.random() * 10);
     fault_count_10s[center] = Math.floor(Math.random() * 5);
   });
@@ -90,7 +93,7 @@ export const useFaultData = () => {
           setTimeSeriesData(current => {
             // Keep only last 144 data points (12 hours of 5-minute intervals)
             const newData = [...current, ...newPoints];
-            return newData.slice(-144 * centers.length); // Adjust based on number of centers
+            return newData.slice(-144 * CENTERS.length); // Now using the constant CENTERS
           });
           
           setError(null);
