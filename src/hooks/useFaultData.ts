@@ -35,6 +35,7 @@ export const useFaultData = () => {
   const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesPoint[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
+  const [fetchAttempt, setFetchAttempt] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -111,6 +112,11 @@ export const useFaultData = () => {
     // Initial fetch
     fetchData();
 
+    // Manual retry button trigger
+    if (fetchAttempt > 0) {
+      fetchData();
+    }
+
     // Update every 5 minutes (300000 ms)
     const FIVE_MINUTES = 5 * 60 * 1000;
     const intervalId = setInterval(fetchData, FIVE_MINUTES);
@@ -119,7 +125,13 @@ export const useFaultData = () => {
       isMounted = false;
       clearInterval(intervalId);
     };
-  }, [isUsingMockData]);
+  }, [isUsingMockData, fetchAttempt]);
 
-  return { timeSeriesData, error, isUsingMockData };
+  // Function to manually trigger a refresh
+  const refreshData = () => {
+    setFetchAttempt(prev => prev + 1);
+    toast.info('Refreshing data...');
+  };
+
+  return { timeSeriesData, error, isUsingMockData, refreshData };
 };

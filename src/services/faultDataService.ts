@@ -10,6 +10,7 @@ const CORS_PROXIES = [
   (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
   (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
   (url: string) => `https://cors-anywhere.herokuapp.com/${url}`,
+  (url: string) => `https://proxy.cors.sh/${url}`, // Added additional proxy
   (url: string) => `https://cors-proxy.htmldriven.com/?url=${encodeURIComponent(url)}`
 ];
 
@@ -47,6 +48,27 @@ export const fetchFaultData = async (): Promise<FaultData> => {
       const proxyUrl = CORS_PROXIES[i](targetUrl);
       console.log(`Trying CORS proxy ${i+1}/${CORS_PROXIES.length}: ${proxyUrl}`);
       
+      // Try with regular fetch first (without no-cors mode)
+      try {
+        const response = await fetch(proxyUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Origin': window.location.origin
+          },
+          // No no-cors mode first to see if we can get a proper response
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log(`Proxy ${i+1} successful with regular mode`);
+          return processApiResponse(data);
+        }
+      } catch (regularError) {
+        console.log(`Regular mode failed for proxy ${i+1}, trying no-cors mode`);
+      }
+      
+      // If regular fetch fails, try with no-cors mode
       const response = await fetch(proxyUrl, {
         method: 'GET',
         headers: {
@@ -54,7 +76,7 @@ export const fetchFaultData = async (): Promise<FaultData> => {
           'Origin': window.location.origin,
           'X-Requested-With': 'XMLHttpRequest'
         },
-        mode: 'no-cors' // Add no-cors mode to handle CORS restrictions
+        mode: 'no-cors'
       });
       
       // When using no-cors, we can't actually read the response
@@ -63,7 +85,7 @@ export const fetchFaultData = async (): Promise<FaultData> => {
       if (response.type === 'opaque') {
         console.log(`Proxy ${i+1} returned opaque response. Cannot read content due to CORS.`);
         // With opaque responses, we can't access the content
-        // Let's fall back to mock data
+        // Let's throw an error to move to the next proxy or fallback to mock data
         throw new Error('Cannot access response content due to CORS restrictions');
       }
       
@@ -72,6 +94,7 @@ export const fetchFaultData = async (): Promise<FaultData> => {
         continue;
       }
       
+      // This code will likely not be reached with no-cors mode
       const data = await response.json();
       return processApiResponse(data);
     } catch (error) {
