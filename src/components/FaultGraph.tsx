@@ -8,11 +8,10 @@ import SortableTable from './SortableTable';
 const FaultGraph = () => {
   const { currentData, error, isUsingMockData, refreshData } = useFaultData();
 
-  const tableData = Object.entries(currentData?.fault_count_5s || {}).map(([center, count5s]) => ({
-    center,
-    fault_count_5s: count5s,
-    fault_count_10s: currentData?.fault_count_10s[center] || 0
-  }));
+  const tableData = currentData ? Object.entries(currentData).map(([location, data]) => ({
+    location,
+    ...data
+  })) : [];
 
   if (error && !isUsingMockData) {
     return (

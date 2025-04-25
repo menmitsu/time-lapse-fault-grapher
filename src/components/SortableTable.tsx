@@ -10,23 +10,20 @@ import {
 } from "@/components/ui/table";
 import { ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-type FaultDataRow = {
-  center: string;
-  fault_count_5s: number;
-  fault_count_10s: number;
-};
+import { LocationData } from '../services/faultDataService';
 
 interface SortableTableProps {
-  data: FaultDataRow[];
+  data: Array<{ location: string } & LocationData>;
 }
+
+type SortableFields = keyof (LocationData & { location: string });
 
 const SortableTable = ({ data }: SortableTableProps) => {
   const [sortConfig, setSortConfig] = useState<{
-    key: keyof FaultDataRow;
+    key: SortableFields;
     direction: 'asc' | 'desc';
   }>({
-    key: 'center',
+    key: 'location',
     direction: 'desc'
   });
 
@@ -40,7 +37,7 @@ const SortableTable = ({ data }: SortableTableProps) => {
     return 0;
   });
 
-  const requestSort = (key: keyof FaultDataRow) => {
+  const requestSort = (key: SortableFields) => {
     setSortConfig({
       key,
       direction:
@@ -58,7 +55,7 @@ const SortableTable = ({ data }: SortableTableProps) => {
             <TableHead>
               <Button
                 variant="ghost"
-                onClick={() => requestSort('center')}
+                onClick={() => requestSort('location')}
                 className="h-8 whitespace-nowrap"
               >
                 Location
@@ -68,31 +65,75 @@ const SortableTable = ({ data }: SortableTableProps) => {
             <TableHead>
               <Button
                 variant="ghost"
-                onClick={() => requestSort('fault_count_5s')}
+                onClick={() => requestSort('frames_with_5s_delay')}
                 className="h-8 whitespace-nowrap"
               >
-                5s Fault Count
+                5s Delays
                 <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
             </TableHead>
             <TableHead>
               <Button
                 variant="ghost"
-                onClick={() => requestSort('fault_count_10s')}
+                onClick={() => requestSort('frames_with_10s_delay')}
                 className="h-8 whitespace-nowrap"
               >
-                10s Fault Count
+                10s Delays
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TableHead>
+            <TableHead>
+              <Button
+                variant="ghost"
+                onClick={() => requestSort('frames_with_15s_delay')}
+                className="h-8 whitespace-nowrap"
+              >
+                15s Delays
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TableHead>
+            <TableHead>
+              <Button
+                variant="ghost"
+                onClick={() => requestSort('total_frames_recieved_since_first_frame')}
+                className="h-8 whitespace-nowrap"
+              >
+                Frames Received
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TableHead>
+            <TableHead>
+              <Button
+                variant="ghost"
+                onClick={() => requestSort('total_frames_should_have_recieved_since_first_frame')}
+                className="h-8 whitespace-nowrap"
+              >
+                Expected Frames
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TableHead>
+            <TableHead>
+              <Button
+                variant="ghost"
+                onClick={() => requestSort('last_frame_timestamp')}
+                className="h-8 whitespace-nowrap"
+              >
+                Last Frame
                 <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
             </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedData.map((row, index) => (
-            <TableRow key={row.center + index}>
-              <TableCell className="font-medium">{row.center}</TableCell>
-              <TableCell>{row.fault_count_5s}</TableCell>
-              <TableCell>{row.fault_count_10s}</TableCell>
+          {sortedData.map((row) => (
+            <TableRow key={row.location}>
+              <TableCell className="font-medium">{row.location}</TableCell>
+              <TableCell>{row.frames_with_5s_delay}</TableCell>
+              <TableCell>{row.frames_with_10s_delay}</TableCell>
+              <TableCell>{row.frames_with_15s_delay}</TableCell>
+              <TableCell>{row.total_frames_recieved_since_first_frame}</TableCell>
+              <TableCell>{row.total_frames_should_have_recieved_since_first_frame}</TableCell>
+              <TableCell>{new Date(row.last_frame_timestamp).toLocaleString()}</TableCell>
             </TableRow>
           ))}
         </TableBody>

@@ -1,8 +1,15 @@
+export interface LocationData {
+  first_frame_timestamp: string;
+  frames_with_10s_delay: number;
+  frames_with_15s_delay: number;
+  frames_with_5s_delay: number;
+  last_frame_timestamp: string;
+  total_frames_recieved_since_first_frame: number;
+  total_frames_should_have_recieved_since_first_frame: number;
+}
 
 export interface FaultData {
-  fault_count_10s: { [key: string]: number };
-  fault_count_5s: { [key: string]: number };
-  timestamp: string;
+  [location: string]: LocationData;
 }
 
 // List of CORS proxies to try in order
@@ -116,46 +123,7 @@ function processApiResponse(data: any): FaultData {
   
   // The server may return data in different formats:
   // 1. Direct format with fault_count_5s and fault_count_10s as top-level properties
-  if (data.fault_count_5s && data.fault_count_10s) {
-    return {
-      fault_count_5s: data.fault_count_5s,
-      fault_count_10s: data.fault_count_10s,
-      timestamp: data.timestamp || new Date().toISOString()
-    };
-  }
+  // 2. New format with location keys
   
-  // 2. Format where each key contains an object with fault_count properties
-  // Transform it into our expected format
-  const fault_count_5s: { [key: string]: number } = {};
-  const fault_count_10s: { [key: string]: number } = {};
-  let lastTimestamp = '';
-  
-  Object.keys(data).forEach(key => {
-    const item = data[key];
-    if (item && typeof item === 'object') {
-      if ('fault_count_5s' in item) {
-        fault_count_5s[key] = Number(item.fault_count_5s);
-      }
-      
-      if ('fault_count_10s' in item) {
-        fault_count_10s[key] = Number(item.fault_count_10s);
-      }
-      
-      if (item.last_timestamp && (!lastTimestamp || new Date(item.last_timestamp) > new Date(lastTimestamp))) {
-        lastTimestamp = item.last_timestamp;
-      }
-    }
-  });
-  
-  // Check if we managed to extract some data
-  if (Object.keys(fault_count_5s).length === 0 && Object.keys(fault_count_10s).length === 0) {
-    console.log('Could not extract fault counts from data:', data);
-    throw new Error('Failed to extract fault data');
-  }
-  
-  return {
-    fault_count_5s,
-    fault_count_10s,
-    timestamp: lastTimestamp || new Date().toISOString()
-  };
+  return data as FaultData;
 }
