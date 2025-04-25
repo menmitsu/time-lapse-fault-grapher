@@ -88,9 +88,9 @@ export const useFaultData = () => {
         
         if (isMounted) {
           setTimeSeriesData(current => {
-            // Keep only last 60 data points (5 minutes worth of data)
+            // Keep only last 144 data points (12 hours of 5-minute intervals)
             const newData = [...current, ...newPoints];
-            return newData.slice(-720); // 12 points per minute * 60 minutes
+            return newData.slice(-144 * centers.length); // Adjust based on number of centers
           });
           
           setError(null);
@@ -108,8 +108,9 @@ export const useFaultData = () => {
     // Initial fetch
     fetchData();
 
-    // Update every minute instead of every 5 seconds
-    const intervalId = setInterval(fetchData, 60000);
+    // Update every 5 minutes (300000 ms)
+    const FIVE_MINUTES = 5 * 60 * 1000;
+    const intervalId = setInterval(fetchData, FIVE_MINUTES);
 
     return () => {
       isMounted = false;
