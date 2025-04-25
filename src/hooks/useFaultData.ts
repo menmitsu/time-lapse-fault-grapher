@@ -3,13 +3,6 @@ import { useState, useEffect } from 'react';
 import { fetchFaultData, FaultData } from '../services/faultDataService';
 import { toast } from '@/components/ui/sonner';
 
-interface TimeSeriesPoint {
-  timestamp: Date;
-  value: number;
-  center: string;
-  type: '5s' | '10s';
-}
-
 // Define centers at module scope so it's available throughout the file
 const CENTERS = ['center1', 'center2', 'center3', 'center4'];
 
@@ -32,7 +25,7 @@ const generateMockData = (): FaultData => {
 };
 
 export const useFaultData = () => {
-  const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesPoint[]>([]);
+  const [currentData, setCurrentData] = useState<FaultData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
   const [fetchAttempt, setFetchAttempt] = useState(0);
@@ -42,13 +35,13 @@ export const useFaultData = () => {
     
     const fetchData = async () => {
       try {
-        console.log('Attempting to fetch fault data...'); // Added logging
+        console.log('Attempting to fetch fault data...');
         
         let data: FaultData;
         
         try {
           data = await fetchFaultData();
-          console.log('Fault Data Retrieved:', data); // Log the retrieved data
+          console.log('Fault Data Retrieved:', data);
           
           if (isUsingMockData) {
             setIsUsingMockData(false);
@@ -62,41 +55,11 @@ export const useFaultData = () => {
             toast.warning('Using mock data - API connection failed');
           }
           
-          // Use mock data when API fails
           data = generateMockData();
         }
         
-        const timestamp = new Date();
-        
-        const newPoints: TimeSeriesPoint[] = [];
-        
-        // Process 5s fault counts
-        Object.entries(data.fault_count_5s).forEach(([center, value]) => {
-          newPoints.push({
-            timestamp,
-            value,
-            center,
-            type: '5s'
-          });
-        });
-        
-        // Process 10s fault counts
-        Object.entries(data.fault_count_10s).forEach(([center, value]) => {
-          newPoints.push({
-            timestamp,
-            value,
-            center,
-            type: '10s'
-          });
-        });
-        
         if (isMounted) {
-          setTimeSeriesData(current => {
-            // Keep only last 144 data points (12 hours of 5-minute intervals)
-            const newData = [...current, ...newPoints];
-            return newData.slice(-144 * CENTERS.length); // Now using the constant CENTERS
-          });
-          
+          setCurrentData(data);
           setError(null);
         }
       } catch (err) {
@@ -133,5 +96,5 @@ export const useFaultData = () => {
     toast.info('Refreshing data...');
   };
 
-  return { timeSeriesData, error, isUsingMockData, refreshData };
+  return { currentData, error, isUsingMockData, refreshData };
 };

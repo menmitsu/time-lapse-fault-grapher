@@ -1,40 +1,18 @@
 
-import { useMemo } from 'react';
 import { useFaultData } from '../hooks/useFaultData';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
-import { format } from 'date-fns';
-import TimeseriesGraph from './TimeseriesGraph';
 import { Button } from '@/components/ui/button';
+import SortableTable from './SortableTable';
 
 const FaultGraph = () => {
-  const { timeSeriesData, error, isUsingMockData, refreshData } = useFaultData();
+  const { currentData, error, isUsingMockData, refreshData } = useFaultData();
 
-  const formattedData = useMemo(() => {
-    // Group data points by timestamp
-    const groupedByTime = timeSeriesData.reduce((acc, point) => {
-      const timeKey = format(point.timestamp, 'HH:mm:ss');
-      if (!acc[timeKey]) {
-        acc[timeKey] = { timestamp: timeKey };
-      }
-      
-      const locationKey = `${point.center}_${point.type}`;
-      acc[timeKey][locationKey] = point.value;
-      
-      return acc;
-    }, {} as Record<string, any>);
-
-    // Convert to array and sort by timestamp
-    return Object.values(groupedByTime).sort((a, b) => 
-      new Date('1970/01/01 ' + a.timestamp).getTime() - 
-      new Date('1970/01/01 ' + b.timestamp).getTime()
-    );
-  }, [timeSeriesData]);
-
-  const uniqueLocations = useMemo(() => 
-    Array.from(new Set(timeSeriesData.map(point => point.center))),
-    [timeSeriesData]
-  );
+  const tableData = Object.entries(currentData?.fault_count_5s || {}).map(([center, count5s]) => ({
+    center,
+    fault_count_5s: count5s,
+    fault_count_10s: currentData?.fault_count_10s[center] || 0
+  }));
 
   if (error && !isUsingMockData) {
     return (
@@ -79,17 +57,7 @@ const FaultGraph = () => {
         </Alert>
       )}
       
-      <TimeseriesGraph 
-        data={formattedData}
-        type="5s"
-        locations={uniqueLocations}
-      />
-      
-      <TimeseriesGraph 
-        data={formattedData}
-        type="10s"
-        locations={uniqueLocations}
-      />
+      <SortableTable data={tableData} />
     </div>
   );
 };
