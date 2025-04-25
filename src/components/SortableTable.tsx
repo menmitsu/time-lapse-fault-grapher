@@ -7,10 +7,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowUpDown, Server } from "lucide-react";
+import { ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LocationData } from '../services/faultDataService';
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SortableTableProps {
   data: Array<{ 
@@ -74,7 +73,7 @@ const SortableTable = ({ data }: SortableTableProps) => {
                 onClick={() => requestSort('location')}
                 className="h-8 whitespace-nowrap font-semibold"
               >
-                Location / Server
+                Location (Server IP)
                 <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
             </TableHead>
@@ -154,16 +153,9 @@ const SortableTable = ({ data }: SortableTableProps) => {
           {sortedData.map((row) => (
             <TableRow key={row.location} className="hover:bg-gray-50/50">
               <TableCell className="font-medium">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col">
                   <span>{row.location}</span>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Server className="h-4 w-4 text-gray-500" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      Server IP: {row.serverIp}
-                    </TooltipContent>
-                  </Tooltip>
+                  <span className="text-xs text-gray-500">{row.serverIp}</span>
                 </div>
               </TableCell>
               <TableCell>{row.frames_with_5s_delay}</TableCell>
