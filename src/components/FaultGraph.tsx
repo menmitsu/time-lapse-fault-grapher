@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import SortableTable from './SortableTable';
 
 const FaultGraph = () => {
-  const { currentData, error, isUsingMockData, refreshData } = useFaultData();
+  const { currentData, error, isUsingMockData, isLoading, refreshData } = useFaultData();
 
   const tableData = currentData ? Object.entries(currentData).map(([location, data]) => {
     const framesMissed = data.total_frames_should_have_recieved_since_first_frame - data.total_frames_recieved_since_first_frame;
@@ -38,8 +38,9 @@ const FaultGraph = () => {
             onClick={refreshData}
             className="flex items-center gap-2"
             variant="outline"
+            disabled={isLoading}
           >
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh Data
           </Button>
         </div>

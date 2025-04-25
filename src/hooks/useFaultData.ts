@@ -21,8 +21,10 @@ export const useFaultData = () => {
   const [currentData, setCurrentData] = useState<FaultData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchData = async () => {
+    setIsLoading(true);
     try {
       console.log('Attempting to fetch fault data...');
       
@@ -53,8 +55,10 @@ export const useFaultData = () => {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch data';
       console.error('General error:', errorMessage);
       setError(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  return { currentData, error, isUsingMockData, refreshData: fetchData };
+  return { currentData, error, isUsingMockData, isLoading, refreshData: fetchData };
 };
