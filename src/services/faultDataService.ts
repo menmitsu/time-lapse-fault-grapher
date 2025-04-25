@@ -21,97 +21,107 @@ const CORS_PROXIES = [
   (url: string) => `https://cors-proxy.htmldriven.com/?url=${encodeURIComponent(url)}`
 ];
 
+const ENDPOINTS = [
+  '34.93.233.94:5020/get_frame_timestamp_stats',
+  '35.200.180.212:5020/get_frame_timestamp_stats'
+];
+
 export const fetchFaultData = async (): Promise<FaultData> => {
-  // Check if we're running in HTTPS environment
   const isHttps = window.location.protocol === 'https:';
-  const endpoint = '34.93.233.94:5020/get_frame_timestamp_stats';
-  const targetUrl = `http://${endpoint}`;
   
-  // If we're in HTTP mode, try direct connection first
-  if (!isHttps) {
-    try {
-      console.log(`Attempting direct connection to: ${targetUrl}`);
-      const response = await fetch(targetUrl, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        return processApiResponse(data);
-      }
-    } catch (error) {
-      console.log('Direct connection failed, will try proxies');
-    }
-  }
-  
-  // If direct connection failed or we're on HTTPS, try the CORS proxies
-  let lastError: Error | null = null;
-  
-  for (let i = 0; i < CORS_PROXIES.length; i++) {
-    try {
-      const proxyUrl = CORS_PROXIES[i](targetUrl);
-      console.log(`Trying CORS proxy ${i+1}/${CORS_PROXIES.length}: ${proxyUrl}`);
-      
-      // Try with regular fetch first (without no-cors mode)
+  // Function to fetch from a single endpoint
+  const fetchFromEndpoint = async (endpoint: string): Promise<FaultData> => {
+    const targetUrl = `http://${endpoint}`;
+    
+    // If we're in HTTP mode, try direct connection first
+    if (!isHttps) {
       try {
-        const response = await fetch(proxyUrl, {
+        console.log(`Attempting direct connection to: ${targetUrl}`);
+        const response = await fetch(targetUrl, {
           method: 'GET',
           headers: {
-            'Accept': 'application/json',
-            'Origin': window.location.origin
-          },
-          // No no-cors mode first to see if we can get a proper response
+            'Accept': 'application/json'
+          }
         });
         
         if (response.ok) {
           const data = await response.json();
-          console.log(`Proxy ${i+1} successful with regular mode`);
           return processApiResponse(data);
         }
-      } catch (regularError) {
-        console.log(`Regular mode failed for proxy ${i+1}, trying no-cors mode`);
+      } catch (error) {
+        console.log(`Direct connection failed for ${endpoint}, will try proxies`);
       }
-      
-      // If regular fetch fails, try with no-cors mode
-      const response = await fetch(proxyUrl, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Origin': window.location.origin,
-          'X-Requested-With': 'XMLHttpRequest'
-        },
-        mode: 'no-cors'
-      });
-      
-      // When using no-cors, we can't actually read the response
-      // This is a limitation of the no-cors mode
-      // We'll need to handle this case differently
-      if (response.type === 'opaque') {
-        console.log(`Proxy ${i+1} returned opaque response. Cannot read content due to CORS.`);
-        // With opaque responses, we can't access the content
-        // Let's throw an error to move to the next proxy or fallback to mock data
-        throw new Error('Cannot access response content due to CORS restrictions');
-      }
-      
-      if (!response.ok) {
-        console.log(`Proxy ${i+1} failed with status: ${response.status}`);
-        continue;
-      }
-      
-      // This code will likely not be reached with no-cors mode
-      const data = await response.json();
-      return processApiResponse(data);
-    } catch (error) {
-      console.log(`Proxy ${i+1} error:`, error);
-      lastError = error instanceof Error ? error : new Error(String(error));
     }
-  }
+    
+    // If direct connection failed or we're on HTTPS, try the CORS proxies
+    for (let i = 0; i < CORS_PROXIES.length; i++) {
+      try {
+        const proxyUrl = CORS_PROXIES[i](targetUrl);
+        console.log(`Trying CORS proxy ${i+1}/${CORS_PROXIES.length} for ${endpoint}: ${proxyUrl}`);
+        
+        try {
+          const response = await fetch(proxyUrl, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Origin': window.location.origin
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`Proxy ${i+1} successful for ${endpoint}`);
+            return processApiResponse(data);
+          }
+        } catch (regularError) {
+          console.log(`Regular mode failed for proxy ${i+1} on ${endpoint}`);
+        }
+        
+        const response = await fetch(proxyUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Origin': window.location.origin,
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          mode: 'no-cors'
+        });
+        
+        if (response.type === 'opaque') {
+          throw new Error('Cannot access response content due to CORS restrictions');
+        }
+      } catch (error) {
+        console.log(`Proxy ${i+1} error for ${endpoint}:`, error);
+      }
+    }
+    
+    throw new Error(`All CORS proxies failed for ${endpoint}`);
+  };
   
-  // If we've tried all proxies and none worked, throw the last error
-  throw lastError || new Error('All CORS proxies failed');
+  try {
+    // Fetch from both endpoints concurrently
+    const results = await Promise.allSettled(ENDPOINTS.map(fetchFromEndpoint));
+    
+    // Combine successful results
+    const combinedData: FaultData = {};
+    
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        Object.assign(combinedData, result.value);
+      } else {
+        console.error(`Failed to fetch from ${ENDPOINTS[index]}:`, result.reason);
+      }
+    });
+    
+    // If we got no data at all, throw an error
+    if (Object.keys(combinedData).length === 0) {
+      throw new Error('Failed to fetch data from all endpoints');
+    }
+    
+    return combinedData;
+  } catch (error) {
+    throw error;
+  }
 };
 
 // Process and transform the API response into our expected format
