@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Table,
@@ -8,15 +7,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LocationData } from '../services/faultDataService';
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SortableTableProps {
-  data: Array<{ location: string; frames_missed: number } & LocationData>;
+  data: Array<{ 
+    location: string; 
+    frames_missed: number;
+    serverIp: string; 
+  } & LocationData>;
 }
 
-type SortableFields = keyof (LocationData & { location: string; frames_missed: number });
+type SortableFields = keyof (LocationData & { location: string; frames_missed: number; serverIp: string });
 
 const getBackgroundColor = (framesMissed: number) => {
   if (framesMissed < 100) return 'bg-[#F2FCE2]';
@@ -70,7 +74,7 @@ const SortableTable = ({ data }: SortableTableProps) => {
                 onClick={() => requestSort('location')}
                 className="h-8 whitespace-nowrap font-semibold"
               >
-                Location
+                Location / Server
                 <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
             </TableHead>
@@ -149,7 +153,19 @@ const SortableTable = ({ data }: SortableTableProps) => {
         <TableBody>
           {sortedData.map((row) => (
             <TableRow key={row.location} className="hover:bg-gray-50/50">
-              <TableCell className="font-medium">{row.location}</TableCell>
+              <TableCell className="font-medium">
+                <div className="flex items-center gap-2">
+                  <span>{row.location}</span>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Server className="h-4 w-4 text-gray-500" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Server IP: {row.serverIp}
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </TableCell>
               <TableCell>{row.frames_with_5s_delay}</TableCell>
               <TableCell>{row.frames_with_10s_delay}</TableCell>
               <TableCell>{row.frames_with_15s_delay}</TableCell>

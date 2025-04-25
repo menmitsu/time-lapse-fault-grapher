@@ -11,10 +11,12 @@ const FaultGraph = () => {
 
   const tableData = currentData ? Object.entries(currentData).map(([location, data]) => {
     const framesMissed = data.total_frames_should_have_recieved_since_first_frame - data.total_frames_recieved_since_first_frame;
+    const serverIp = location.includes('34.93.233.94') ? '34.93.233.94:5020' : '35.200.180.212:5020';
     return {
       location,
       ...data,
-      frames_missed: framesMissed
+      frames_missed: framesMissed,
+      serverIp
     };
   }) : [];
 
