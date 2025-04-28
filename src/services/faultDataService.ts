@@ -1,3 +1,4 @@
+
 export interface LocationData {
   first_frame_timestamp: string;
   frames_with_10s_delay: number;
@@ -107,7 +108,19 @@ export const fetchFaultData = async (): Promise<FaultData> => {
     
     results.forEach((result, index) => {
       if (result.status === 'fulfilled') {
-        Object.assign(combinedData, result.value);
+        // The bug was here - instead of overwriting existing entries, we need to merge data
+        // from different endpoints based on unique location keys
+        Object.entries(result.value).forEach(([location, data]) => {
+          // Add the server IP to the location for later identification
+          const locationWithServer = `${location}`;
+          combinedData[locationWithServer] = {
+            ...data,
+            // Add origin information to the data
+            serverIp: ENDPOINTS[index]
+          } as LocationData & { serverIp: string };
+        });
+        
+        console.log(`Successfully added data from ${ENDPOINTS[index]}`);
       } else {
         console.error(`Failed to fetch from ${ENDPOINTS[index]}:`, result.reason);
       }

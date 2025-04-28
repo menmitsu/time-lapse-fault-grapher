@@ -5,13 +5,23 @@ import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import SortableTable from './SortableTable';
+import { useEffect } from 'react';
 
 const FaultGraph = () => {
   const { currentData, error, isUsingMockData, isLoading, refreshData } = useFaultData();
 
+  // Add effect to fetch data on component mount
+  useEffect(() => {
+    refreshData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const tableData = currentData ? Object.entries(currentData).map(([location, data]) => {
     const framesMissed = data.total_frames_should_have_recieved_since_first_frame - data.total_frames_recieved_since_first_frame;
-    const serverIp = location.includes('34.93.233.94') ? '34.93.233.94:5020' : '35.200.180.212:5020';
+    // Use the serverIp from the data object, or extract it from the location if needed
+    const serverIp = data.serverIp || (
+      location.includes('34.93.233.94') ? '34.93.233.94:5020' : '35.200.180.212:5020'
+    );
     return {
       location,
       ...data,

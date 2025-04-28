@@ -12,7 +12,8 @@ const generateMockData = (): FaultData => {
       frames_with_5s_delay: 29,
       last_frame_timestamp: "2025-04-25 18:29:56",
       total_frames_recieved_since_first_frame: 2540,
-      total_frames_should_have_recieved_since_first_frame: 2561
+      total_frames_should_have_recieved_since_first_frame: 2561,
+      serverIp: '34.93.233.94:5020'
     }
   };
 };
