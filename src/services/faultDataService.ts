@@ -7,6 +7,7 @@ export interface LocationData {
   last_frame_timestamp: string;
   total_frames_recieved_since_first_frame: number;
   total_frames_should_have_recieved_since_first_frame: number;
+  serverIp?: string; // Add optional serverIp property
 }
 
 export interface FaultData {
