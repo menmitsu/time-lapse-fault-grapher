@@ -1,4 +1,3 @@
-
 export interface LocationData {
   first_frame_timestamp: string;
   frames_with_10s_delay: number;
@@ -28,12 +27,18 @@ const ENDPOINTS = [
   '35.200.180.212:5020/get_frame_timestamp_stats'
 ];
 
+// Helper function to get base IP from endpoint
+const getBaseIp = (endpoint: string) => {
+  return endpoint.split('/')[0].split(':')[0];
+};
+
 export const fetchFaultData = async (): Promise<FaultData> => {
   const isHttps = window.location.protocol === 'https:';
   
   // Function to fetch from a single endpoint
   const fetchFromEndpoint = async (endpoint: string): Promise<FaultData> => {
     const targetUrl = `http://${endpoint}`;
+    const baseIp = getBaseIp(endpoint);
     
     // If we're in HTTP mode, try direct connection first
     if (!isHttps) {

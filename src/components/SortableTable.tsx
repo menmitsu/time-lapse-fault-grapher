@@ -80,6 +80,16 @@ const SortableTable = ({ data }: SortableTableProps) => {
             <TableHead>
               <Button
                 variant="ghost"
+                onClick={() => requestSort('first_frame_timestamp')}
+                className="h-8 whitespace-nowrap font-semibold"
+              >
+                First Frame
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TableHead>
+            <TableHead>
+              <Button
+                variant="ghost"
                 onClick={() => requestSort('frames_with_5s_delay')}
                 className="h-8 whitespace-nowrap font-semibold"
               >
@@ -158,6 +168,7 @@ const SortableTable = ({ data }: SortableTableProps) => {
                   <span className="text-xs text-gray-500">{row.serverIp}</span>
                 </div>
               </TableCell>
+              <TableCell>{new Date(row.first_frame_timestamp).toLocaleString()}</TableCell>
               <TableCell>{row.frames_with_5s_delay}</TableCell>
               <TableCell>{row.frames_with_10s_delay}</TableCell>
               <TableCell>{row.frames_with_15s_delay}</TableCell>
