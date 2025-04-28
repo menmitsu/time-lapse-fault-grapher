@@ -22,8 +22,8 @@ const CORS_PROXIES = [
 ];
 
 const ENDPOINTS = [
-  'https://34.93.233.94:5020/get_frame_timestamp_stats',
-  'https://35.200.180.212:5020/get_frame_timestamp_stats'
+  '34.93.233.94:5020/get_frame_timestamp_stats',
+  '35.200.180.212:5020/get_frame_timestamp_stats'
 ];
 
 export const fetchFaultData = async (): Promise<FaultData> => {
