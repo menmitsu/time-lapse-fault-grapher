@@ -35,6 +35,14 @@ const getTextColor = (percentage: number) => {
   return 'text-red-700';
 };
 
+const isFrameStale = (timestamp: string) => {
+  const frameTime = new Date(timestamp).getTime();
+  const currentTime = new Date().getTime();
+  const fiveMinutesInMs = 5 * 60 * 1000;
+  
+  return (currentTime - frameTime) > fiveMinutesInMs;
+};
+
 const BalenaCacheTable = ({ data }: BalenaCacheTableProps) => {
   const [sortConfig, setSortConfig] = useState<{
     key: SortableFields;
@@ -82,16 +90,6 @@ const BalenaCacheTable = ({ data }: BalenaCacheTableProps) => {
             <TableHead>
               <Button
                 variant="ghost"
-                onClick={() => requestSort('start_timestamp')}
-                className="h-8 whitespace-nowrap font-semibold"
-              >
-                Start Time
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-              </Button>
-            </TableHead>
-            <TableHead>
-              <Button
-                variant="ghost"
                 onClick={() => requestSort('total_delayed_frames')}
                 className="h-8 whitespace-nowrap font-semibold"
               >
@@ -132,10 +130,10 @@ const BalenaCacheTable = ({ data }: BalenaCacheTableProps) => {
             <TableHead>
               <Button
                 variant="ghost"
-                onClick={() => requestSort('total_reconnect_instances')}
+                onClick={() => requestSort('start_timestamp')}
                 className="h-8 whitespace-nowrap font-semibold"
               >
-                Reconnects
+                First Frame
                 <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
             </TableHead>
@@ -149,35 +147,56 @@ const BalenaCacheTable = ({ data }: BalenaCacheTableProps) => {
                 <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
             </TableHead>
+            <TableHead>
+              <Button
+                variant="ghost"
+                onClick={() => requestSort('total_reconnect_instances')}
+                className="h-8 whitespace-nowrap font-semibold"
+              >
+                Reconnects
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedData.map((row) => (
-            <TableRow key={row.location} className="hover:bg-gray-50/50">
-              <TableCell className="font-medium">
-                <div className="flex flex-col">
-                  <span>{row.location}</span>
-                  <span className="text-xs text-gray-500">{row.serverIp}</span>
-                </div>
-              </TableCell>
-              <TableCell>{new Date(row.start_timestamp).toLocaleString()}</TableCell>
-              <TableCell>{row.total_delayed_frames}</TableCell>
-              <TableCell>{row.total_1s_frames_captured}</TableCell>
-              <TableCell 
-                className={`font-medium ${getBackgroundColor(row.delayPercentage)} ${getTextColor(row.delayPercentage)}`}
-              >
-                <div className="flex items-center gap-2">
-                  {row.delayPercentage.toFixed(2)}%
-                  {row.delayPercentage > 5 && (
-                    <Badge variant="destructive" className="text-xs">High</Badge>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>{row.weighted_avg_delay}</TableCell>
-              <TableCell>{row.total_reconnect_instances}</TableCell>
-              <TableCell>{new Date(row.last_frame_timestamp).toLocaleString()}</TableCell>
-            </TableRow>
-          ))}
+          {sortedData.map((row) => {
+            const isStale = isFrameStale(row.last_frame_timestamp);
+            
+            return (
+              <TableRow key={row.location} className="hover:bg-gray-50/50">
+                <TableCell className="font-medium">
+                  <div className="flex flex-col">
+                    <span>{row.location}</span>
+                    <span className="text-xs text-gray-500">{row.serverIp}</span>
+                  </div>
+                </TableCell>
+                <TableCell>{row.total_delayed_frames}</TableCell>
+                <TableCell>{row.total_1s_frames_captured}</TableCell>
+                <TableCell 
+                  className={`font-medium ${getBackgroundColor(row.delayPercentage)} ${getTextColor(row.delayPercentage)}`}
+                >
+                  <div className="flex items-center gap-2">
+                    {row.delayPercentage.toFixed(2)}%
+                    {row.delayPercentage > 5 && (
+                      <Badge variant="destructive" className="text-xs">High</Badge>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>{row.weighted_avg_delay}</TableCell>
+                <TableCell>{new Date(row.start_timestamp).toLocaleString()}</TableCell>
+                <TableCell className={isStale ? 'bg-red-50 text-red-700 font-medium' : ''}>
+                  <div className="flex items-center gap-2">
+                    {new Date(row.last_frame_timestamp).toLocaleString()}
+                    {isStale && (
+                      <Badge variant="destructive" className="text-xs">Stale</Badge>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>{row.total_reconnect_instances}</TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
