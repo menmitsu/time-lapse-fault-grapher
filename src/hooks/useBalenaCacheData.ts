@@ -38,7 +38,7 @@ export const useBalenaCacheData = () => {
   const [cooldownActive, setCooldownActive] = useState(false);
   // Create a ref to track active requests
   const activeRequestRef = useRef<AbortController | null>(null);
-  const COOLDOWN_DURATION = 30000; // 30 seconds cooldown
+  const COOLDOWN_DURATION = 15000; // Reduced from 30000 to 15000 (15 seconds cooldown)
 
   // Function to check if we're in cooldown period
   const isInCooldown = (): boolean => {
@@ -85,7 +85,8 @@ export const useBalenaCacheData = () => {
       let data: BalenaCacheResponse;
       
       try {
-        data = await fetchBalenaCacheData(abortController.signal);
+        // Add a timestamp query parameter to prevent caching
+        data = await fetchBalenaCacheData(abortController.signal, true);
         console.log('Balena Cache Data Retrieved:', data);
         
         if (isUsingMockData) {

@@ -32,12 +32,14 @@ const getBaseIp = (endpoint: string) => {
   return endpoint.split('/')[0].split(':')[0];
 };
 
-export const fetchBalenaCacheData = async (signal?: AbortSignal): Promise<BalenaCacheResponse> => {
+export const fetchBalenaCacheData = async (signal?: AbortSignal, preventCache: boolean = false): Promise<BalenaCacheResponse> => {
   const isHttps = window.location.protocol === 'https:';
   
   // Function to fetch from a single endpoint
   const fetchFromEndpoint = async (endpoint: string): Promise<BalenaCacheResponse> => {
-    const targetUrl = `http://${endpoint}`;
+    // Add timestamp to prevent caching if requested
+    const cacheBuster = preventCache ? `?_t=${Date.now()}` : '';
+    const targetUrl = `http://${endpoint}${cacheBuster}`;
     
     // If we're in HTTP mode, try direct connection first
     if (!isHttps) {
@@ -46,7 +48,10 @@ export const fetchBalenaCacheData = async (signal?: AbortSignal): Promise<Balena
         const response = await fetch(targetUrl, {
           method: 'GET',
           headers: {
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           },
           signal // Pass the signal to the fetch request
         });
@@ -80,7 +85,10 @@ export const fetchBalenaCacheData = async (signal?: AbortSignal): Promise<Balena
             method: 'GET',
             headers: {
               'Accept': 'application/json',
-              'Origin': window.location.origin
+              'Origin': window.location.origin,
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0'
             },
             signal // Pass the signal to the fetch request
           });
@@ -109,7 +117,10 @@ export const fetchBalenaCacheData = async (signal?: AbortSignal): Promise<Balena
           headers: {
             'Accept': 'application/json',
             'Origin': window.location.origin,
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-Requested-With': 'XMLHttpRequest',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           },
           mode: 'no-cors'
         });

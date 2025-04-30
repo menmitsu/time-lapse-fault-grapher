@@ -87,7 +87,7 @@ const BalenaCacheContent = () => {
             disabled={isLoading || cooldownActive}
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            {cooldownActive ? 'Cooling Down...' : isLoading ? 'Refreshing...' : 'Refresh Data'}
+            {cooldownActive ? 'Cooling Down (15s)...' : isLoading ? 'Refreshing...' : 'Refresh Data'}
           </Button>
         </div>
         
