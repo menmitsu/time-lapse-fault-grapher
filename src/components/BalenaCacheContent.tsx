@@ -6,13 +6,22 @@ import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import BalenaCacheTable from './BalenaCacheTable';
+import { toast } from '@/components/ui/sonner';
 
 const BalenaCacheContent = () => {
   const { currentData, error, isUsingMockData, isLoading, refreshData } = useBalenaCacheData();
 
   // Add effect to fetch data on component mount
   useEffect(() => {
-    refreshData();
+    const initialFetch = async () => {
+      try {
+        await refreshData();
+      } catch (err) {
+        console.error('Initial data fetch failed:', err);
+      }
+    };
+    
+    initialFetch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -32,7 +41,12 @@ const BalenaCacheContent = () => {
 
   const handleRefresh = () => {
     console.log('Refreshing balena cache data...');
-    refreshData();
+    toast.info('Refreshing data...', {
+      duration: 2000,
+    });
+    refreshData().catch(err => {
+      console.error('Error during manual refresh:', err);
+    });
   };
 
   if (error && !isUsingMockData) {
@@ -40,6 +54,15 @@ const BalenaCacheContent = () => {
       <Alert variant="destructive" className="max-w-2xl mx-auto mt-4">
         <AlertTitle>Error</AlertTitle>
         <AlertDescription>{error}</AlertDescription>
+        <Button 
+          onClick={handleRefresh} 
+          variant="outline" 
+          size="sm"
+          className="mt-4"
+        >
+          <RefreshCw className="h-3 w-3 mr-1" />
+          Try Again
+        </Button>
       </Alert>
     );
   }

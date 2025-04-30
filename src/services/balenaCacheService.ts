@@ -32,7 +32,7 @@ const getBaseIp = (endpoint: string) => {
   return endpoint.split('/')[0].split(':')[0];
 };
 
-export const fetchBalenaCacheData = async (): Promise<BalenaCacheResponse> => {
+export const fetchBalenaCacheData = async (signal?: AbortSignal): Promise<BalenaCacheResponse> => {
   const isHttps = window.location.protocol === 'https:';
   
   // Function to fetch from a single endpoint
@@ -48,7 +48,8 @@ export const fetchBalenaCacheData = async (): Promise<BalenaCacheResponse> => {
           method: 'GET',
           headers: {
             'Accept': 'application/json'
-          }
+          },
+          signal // Pass the signal to the fetch request
         });
         
         if (response.ok) {
@@ -56,6 +57,10 @@ export const fetchBalenaCacheData = async (): Promise<BalenaCacheResponse> => {
           return data;
         }
       } catch (error) {
+        // Check if the request was aborted
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw error; // Re-throw abort error to be handled by caller
+        }
         console.log(`Direct connection failed for ${endpoint}, will try proxies`);
       }
     }
@@ -72,7 +77,8 @@ export const fetchBalenaCacheData = async (): Promise<BalenaCacheResponse> => {
             headers: {
               'Accept': 'application/json',
               'Origin': window.location.origin
-            }
+            },
+            signal // Pass the signal to the fetch request
           });
           
           if (response.ok) {
@@ -81,7 +87,16 @@ export const fetchBalenaCacheData = async (): Promise<BalenaCacheResponse> => {
             return data;
           }
         } catch (regularError) {
+          // Check if the request was aborted
+          if (regularError instanceof Error && regularError.name === 'AbortError') {
+            throw regularError; // Re-throw abort error to be handled by caller
+          }
           console.log(`Regular mode failed for proxy ${i+1} on ${endpoint}`);
+        }
+        
+        // We can't pass the signal to no-cors mode, so we need to check if aborted first
+        if (signal?.aborted) {
+          throw new DOMException('Aborted', 'AbortError');
         }
         
         const response = await fetch(proxyUrl, {
@@ -98,6 +113,10 @@ export const fetchBalenaCacheData = async (): Promise<BalenaCacheResponse> => {
           throw new Error('Cannot access response content due to CORS restrictions');
         }
       } catch (error) {
+        // Check if the request was aborted
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw error; // Re-throw abort error to be handled by caller
+        }
         console.log(`Proxy ${i+1} error for ${endpoint}:`, error);
       }
     }
@@ -112,6 +131,10 @@ export const fetchBalenaCacheData = async (): Promise<BalenaCacheResponse> => {
         const data = await fetchFromEndpoint(endpoint);
         return data;
       } catch (error) {
+        // Check if the request was aborted
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw error; // Re-throw abort error to be handled by caller
+        }
         console.error(`Failed to fetch from ${endpoint}:`, error);
       }
     }

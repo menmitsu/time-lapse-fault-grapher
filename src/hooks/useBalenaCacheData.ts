@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { fetchBalenaCacheData, BalenaCacheResponse } from '../services/balenaCacheService';
 import { toast } from '@/components/ui/sonner';
 
@@ -34,8 +34,20 @@ export const useBalenaCacheData = () => {
   const [error, setError] = useState<string | null>(null);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  // Create a ref to track active requests
+  const activeRequestRef = useRef<AbortController | null>(null);
 
   const fetchData = async () => {
+    // If there's an ongoing request, abort it
+    if (activeRequestRef.current) {
+      console.log('Aborting previous request');
+      activeRequestRef.current.abort();
+    }
+    
+    // Create a new abort controller for this request
+    const abortController = new AbortController();
+    activeRequestRef.current = abortController;
+    
     setIsLoading(true);
     try {
       console.log('Attempting to fetch balena cache data...');
@@ -43,7 +55,7 @@ export const useBalenaCacheData = () => {
       let data: BalenaCacheResponse;
       
       try {
-        data = await fetchBalenaCacheData();
+        data = await fetchBalenaCacheData(abortController.signal);
         console.log('Balena Cache Data Retrieved:', data);
         
         if (isUsingMockData) {
@@ -51,6 +63,12 @@ export const useBalenaCacheData = () => {
           toast.success('API connection restored');
         }
       } catch (fetchError) {
+        // Check if the error was due to an aborted request
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          console.log('Request was aborted by a new request');
+          return; // Exit early, don't update state
+        }
+        
         console.error('API fetch failed, using mock data instead:', fetchError);
         
         if (!isUsingMockData) {
@@ -61,14 +79,24 @@ export const useBalenaCacheData = () => {
         data = generateMockData();
       }
       
-      setCurrentData(data);
-      setError(null);
+      // Only update state if this is still the active request
+      if (activeRequestRef.current === abortController && !abortController.signal.aborted) {
+        setCurrentData(data);
+        setError(null);
+      }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch data';
-      console.error('General error:', errorMessage);
-      setError(errorMessage);
+      // Only update error state if this is still the active request
+      if (activeRequestRef.current === abortController && !abortController.signal.aborted) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch data';
+        console.error('General error:', errorMessage);
+        setError(errorMessage);
+      }
     } finally {
-      setIsLoading(false);
+      // Clean up only if this is the current request
+      if (activeRequestRef.current === abortController) {
+        setIsLoading(false);
+        activeRequestRef.current = null;
+      }
     }
   };
 
