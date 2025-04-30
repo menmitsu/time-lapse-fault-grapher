@@ -36,7 +36,7 @@ const FaultGraph = () => {
       <div className="flex justify-center mb-4">
         <TabsList>
           <TabsTrigger value="frameStats">Flask Statistics</TabsTrigger>
-          <TabsTrigger value="capturingContainer">Capturing Container</TabsTrigger>
+          <TabsTrigger value="capturingContainer">Capturing Statistics</TabsTrigger>
         </TabsList>
       </div>
       
