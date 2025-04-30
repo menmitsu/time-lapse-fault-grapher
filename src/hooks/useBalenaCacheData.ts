@@ -1,5 +1,5 @@
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { fetchBalenaCacheData, BalenaCacheResponse } from '../services/balenaCacheService';
 import { toast } from '@/components/ui/sonner';
 
@@ -34,10 +34,40 @@ export const useBalenaCacheData = () => {
   const [error, setError] = useState<string | null>(null);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [lastRefreshTime, setLastRefreshTime] = useState<number | null>(null);
+  const [cooldownActive, setCooldownActive] = useState(false);
   // Create a ref to track active requests
   const activeRequestRef = useRef<AbortController | null>(null);
+  const COOLDOWN_DURATION = 30000; // 30 seconds cooldown
+
+  // Function to check if we're in cooldown period
+  const isInCooldown = (): boolean => {
+    if (!lastRefreshTime) return false;
+    const timeSinceLastRefresh = Date.now() - lastRefreshTime;
+    return timeSinceLastRefresh < COOLDOWN_DURATION;
+  };
+
+  // Start cooldown timer when lastRefreshTime changes
+  useEffect(() => {
+    if (lastRefreshTime) {
+      setCooldownActive(true);
+      const cooldownTimer = setTimeout(() => {
+        setCooldownActive(false);
+      }, COOLDOWN_DURATION);
+      
+      // Clean up timer
+      return () => clearTimeout(cooldownTimer);
+    }
+  }, [lastRefreshTime]);
 
   const fetchData = async () => {
+    // Check cooldown period
+    if (isInCooldown()) {
+      const remainingCooldown = Math.ceil((COOLDOWN_DURATION - (Date.now() - lastRefreshTime!)) / 1000);
+      toast.warning(`Please wait ${remainingCooldown} seconds before refreshing again`);
+      return;
+    }
+
     // If there's an ongoing request, abort it
     if (activeRequestRef.current) {
       console.log('Aborting previous request');
@@ -83,6 +113,8 @@ export const useBalenaCacheData = () => {
       if (activeRequestRef.current === abortController && !abortController.signal.aborted) {
         setCurrentData(data);
         setError(null);
+        // Record the time of successful refresh
+        setLastRefreshTime(Date.now());
       }
     } catch (err) {
       // Only update error state if this is still the active request
@@ -100,5 +132,5 @@ export const useBalenaCacheData = () => {
     }
   };
 
-  return { currentData, error, isUsingMockData, isLoading, refreshData: fetchData };
+  return { currentData, error, isUsingMockData, isLoading, cooldownActive, refreshData: fetchData, cooldownDuration: COOLDOWN_DURATION };
 };

@@ -38,7 +38,6 @@ export const fetchBalenaCacheData = async (signal?: AbortSignal): Promise<Balena
   // Function to fetch from a single endpoint
   const fetchFromEndpoint = async (endpoint: string): Promise<BalenaCacheResponse> => {
     const targetUrl = `http://${endpoint}`;
-    const baseIp = getBaseIp(endpoint);
     
     // If we're in HTTP mode, try direct connection first
     if (!isHttps) {
@@ -67,6 +66,11 @@ export const fetchBalenaCacheData = async (signal?: AbortSignal): Promise<Balena
     
     // If direct connection failed or we're on HTTPS, try the CORS proxies
     for (let i = 0; i < CORS_PROXIES.length; i++) {
+      // First, check if the request has been aborted before trying a new proxy
+      if (signal?.aborted) {
+        throw new DOMException('Aborted', 'AbortError');
+      }
+      
       try {
         const proxyUrl = CORS_PROXIES[i](targetUrl);
         console.log(`Trying CORS proxy ${i+1}/${CORS_PROXIES.length} for ${endpoint}: ${proxyUrl}`);
@@ -99,6 +103,7 @@ export const fetchBalenaCacheData = async (signal?: AbortSignal): Promise<Balena
           throw new DOMException('Aborted', 'AbortError');
         }
         
+        // Only attempt no-cors as a last resort since we can't access the response
         const response = await fetch(proxyUrl, {
           method: 'GET',
           headers: {
@@ -124,9 +129,19 @@ export const fetchBalenaCacheData = async (signal?: AbortSignal): Promise<Balena
     throw new Error(`All CORS proxies failed for ${endpoint}`);
   };
   
+  // Check if the request has been aborted before starting
+  if (signal?.aborted) {
+    throw new DOMException('Aborted', 'AbortError');
+  }
+  
   try {
     // Try each endpoint until one works
     for (const endpoint of ENDPOINTS) {
+      // Check for abort before trying each endpoint
+      if (signal?.aborted) {
+        throw new DOMException('Aborted', 'AbortError');
+      }
+      
       try {
         const data = await fetchFromEndpoint(endpoint);
         return data;
@@ -141,6 +156,10 @@ export const fetchBalenaCacheData = async (signal?: AbortSignal): Promise<Balena
     
     throw new Error('Failed to fetch data from all endpoints');
   } catch (error) {
+    // Final check if this is an abort error
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.log('Request aborted by user or new request');
+    }
     throw error;
   }
 };

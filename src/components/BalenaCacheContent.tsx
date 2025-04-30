@@ -9,7 +9,7 @@ import BalenaCacheTable from './BalenaCacheTable';
 import { toast } from '@/components/ui/sonner';
 
 const BalenaCacheContent = () => {
-  const { currentData, error, isUsingMockData, isLoading, refreshData } = useBalenaCacheData();
+  const { currentData, error, isUsingMockData, isLoading, cooldownActive, refreshData } = useBalenaCacheData();
 
   // Add effect to fetch data on component mount
   useEffect(() => {
@@ -41,12 +41,17 @@ const BalenaCacheContent = () => {
 
   const handleRefresh = () => {
     console.log('Refreshing balena cache data...');
-    toast.info('Refreshing data...', {
-      duration: 2000,
-    });
-    refreshData().catch(err => {
-      console.error('Error during manual refresh:', err);
-    });
+    
+    if (!isLoading && !cooldownActive) {
+      toast.info('Refreshing data...', {
+        duration: 2000,
+      });
+      refreshData().catch(err => {
+        console.error('Error during manual refresh:', err);
+      });
+    } else if (cooldownActive) {
+      toast.warning('Please wait before refreshing again');
+    }
   };
 
   if (error && !isUsingMockData) {
@@ -59,6 +64,7 @@ const BalenaCacheContent = () => {
           variant="outline" 
           size="sm"
           className="mt-4"
+          disabled={isLoading || cooldownActive}
         >
           <RefreshCw className="h-3 w-3 mr-1" />
           Try Again
@@ -78,10 +84,10 @@ const BalenaCacheContent = () => {
             onClick={handleRefresh}
             className="flex items-center gap-2"
             variant="outline"
-            disabled={isLoading}
+            disabled={isLoading || cooldownActive}
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh Data
+            {cooldownActive ? 'Cooling Down...' : isLoading ? 'Refreshing...' : 'Refresh Data'}
           </Button>
         </div>
         
@@ -97,6 +103,7 @@ const BalenaCacheContent = () => {
                   variant="outline" 
                   size="sm"
                   className="text-amber-600 border-amber-300"
+                  disabled={isLoading || cooldownActive}
                 >
                   <RefreshCw className="h-3 w-3 mr-1" />
                   Try Again
