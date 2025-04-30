@@ -30,6 +30,11 @@ const BalenaCacheContent = () => {
       }) 
     : [];
 
+  const handleRefresh = () => {
+    console.log('Refreshing balena cache data...');
+    refreshData();
+  };
+
   if (error && !isUsingMockData) {
     return (
       <Alert variant="destructive" className="max-w-2xl mx-auto mt-4">
@@ -47,7 +52,7 @@ const BalenaCacheContent = () => {
             Capturing Container Metrics
           </h2>
           <Button 
-            onClick={refreshData}
+            onClick={handleRefresh}
             className="flex items-center gap-2"
             variant="outline"
             disabled={isLoading}
@@ -65,7 +70,7 @@ const BalenaCacheContent = () => {
               Could not connect to the data source. Displaying mock data for demonstration purposes.
               <div className="mt-2">
                 <Button 
-                  onClick={refreshData} 
+                  onClick={handleRefresh} 
                   variant="outline" 
                   size="sm"
                   className="text-amber-600 border-amber-300"
