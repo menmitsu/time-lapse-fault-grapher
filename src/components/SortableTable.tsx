@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Table,
@@ -19,7 +20,12 @@ interface SortableTableProps {
   } & LocationData>;
 }
 
-type SortableFields = keyof (LocationData & { location: string; frames_missed: number; serverIp: string });
+type SortableFields = keyof (LocationData & { 
+  location: string; 
+  frames_missed: number; 
+  serverIp: string; 
+  frames_missed_percentage?: number;
+});
 
 const getBackgroundColor = (framesMissed: number) => {
   if (framesMissed < 100) return 'bg-[#F2FCE2]';
@@ -42,7 +48,19 @@ const SortableTable = ({ data }: SortableTableProps) => {
     direction: 'desc'
   });
 
-  const sortedData = [...data].sort((a, b) => {
+  // Calculate the percentage frames missed for each entry
+  const dataWithPercentage = data.map(entry => {
+    const percentage = entry.total_frames_should_have_recieved_since_first_frame > 0 
+      ? (entry.frames_missed / entry.total_frames_should_have_recieved_since_first_frame) * 100
+      : 0;
+    
+    return {
+      ...entry,
+      frames_missed_percentage: parseFloat(percentage.toFixed(2))
+    };
+  });
+
+  const sortedData = [...dataWithPercentage].sort((a, b) => {
     if (a[sortConfig.key] < b[sortConfig.key]) {
       return sortConfig.direction === 'asc' ? -1 : 1;
     }
@@ -80,10 +98,50 @@ const SortableTable = ({ data }: SortableTableProps) => {
             <TableHead>
               <Button
                 variant="ghost"
+                onClick={() => requestSort('last_frame_timestamp')}
+                className="h-8 whitespace-nowrap font-semibold"
+              >
+                Last Frame
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TableHead>
+            <TableHead>
+              <Button
+                variant="ghost"
                 onClick={() => requestSort('first_frame_timestamp')}
                 className="h-8 whitespace-nowrap font-semibold"
               >
                 First Frame
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TableHead>
+            <TableHead>
+              <Button
+                variant="ghost"
+                onClick={() => requestSort('frames_missed')}
+                className="h-8 whitespace-nowrap font-semibold"
+              >
+                Frames Missed
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TableHead>
+            <TableHead>
+              <Button
+                variant="ghost"
+                onClick={() => requestSort('frames_missed_percentage')}
+                className="h-8 whitespace-nowrap font-semibold"
+              >
+                Frames Missed (%)
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TableHead>
+            <TableHead>
+              <Button
+                variant="ghost"
+                onClick={() => requestSort('total_frames_should_have_recieved_since_first_frame')}
+                className="h-8 whitespace-nowrap font-semibold"
+              >
+                Expected Frames
                 <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
             </TableHead>
@@ -120,40 +178,10 @@ const SortableTable = ({ data }: SortableTableProps) => {
             <TableHead>
               <Button
                 variant="ghost"
-                onClick={() => requestSort('frames_missed')}
-                className="h-8 whitespace-nowrap font-semibold"
-              >
-                Frames Missed
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-              </Button>
-            </TableHead>
-            <TableHead>
-              <Button
-                variant="ghost"
                 onClick={() => requestSort('total_frames_recieved_since_first_frame')}
                 className="h-8 whitespace-nowrap font-semibold"
               >
                 Frames Received
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-              </Button>
-            </TableHead>
-            <TableHead>
-              <Button
-                variant="ghost"
-                onClick={() => requestSort('total_frames_should_have_recieved_since_first_frame')}
-                className="h-8 whitespace-nowrap font-semibold"
-              >
-                Expected Frames
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-              </Button>
-            </TableHead>
-            <TableHead>
-              <Button
-                variant="ghost"
-                onClick={() => requestSort('last_frame_timestamp')}
-                className="h-8 whitespace-nowrap font-semibold"
-              >
-                Last Frame
                 <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
             </TableHead>
@@ -168,18 +196,23 @@ const SortableTable = ({ data }: SortableTableProps) => {
                   <span className="text-xs text-gray-500">{row.serverIp}</span>
                 </div>
               </TableCell>
+              <TableCell>{new Date(row.last_frame_timestamp).toLocaleString()}</TableCell>
               <TableCell>{new Date(row.first_frame_timestamp).toLocaleString()}</TableCell>
-              <TableCell>{row.frames_with_5s_delay}</TableCell>
-              <TableCell>{row.frames_with_10s_delay}</TableCell>
-              <TableCell>{row.frames_with_15s_delay}</TableCell>
               <TableCell 
                 className={`font-medium ${getBackgroundColor(row.frames_missed)} ${getTextColor(row.frames_missed)}`}
               >
                 {row.frames_missed}
               </TableCell>
-              <TableCell>{row.total_frames_recieved_since_first_frame}</TableCell>
+              <TableCell 
+                className={`font-medium ${getBackgroundColor(row.frames_missed)} ${getTextColor(row.frames_missed)}`}
+              >
+                {row.frames_missed_percentage}%
+              </TableCell>
               <TableCell>{row.total_frames_should_have_recieved_since_first_frame}</TableCell>
-              <TableCell>{new Date(row.last_frame_timestamp).toLocaleString()}</TableCell>
+              <TableCell>{row.frames_with_5s_delay}</TableCell>
+              <TableCell>{row.frames_with_10s_delay}</TableCell>
+              <TableCell>{row.frames_with_15s_delay}</TableCell>
+              <TableCell>{row.total_frames_recieved_since_first_frame}</TableCell>
             </TableRow>
           ))}
         </TableBody>
