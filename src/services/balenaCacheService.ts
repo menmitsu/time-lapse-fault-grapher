@@ -1,3 +1,4 @@
+
 export interface BalenaCacheData {
   cache_frames_with_delay_more_than_1s: number;
   delay_times: number[];
@@ -60,12 +61,17 @@ const CORS_PROXIES = [
 ];
 
 const ENDPOINTS = [
-  '34.93.233.94:5020/get_balena_cache_result'
+  'https://34.93.233.94/get_balena_cache_result'
 ];
 
 // Helper function to get base IP from endpoint
 const getBaseIp = (endpoint: string) => {
-  return endpoint.split('/')[0].split(':')[0];
+  // Extract just the domain or IP without protocol or paths
+  const url = endpoint.includes('://') ? 
+    new URL(endpoint).hostname : 
+    endpoint.split('/')[0].split(':')[0];
+  
+  return url;
 };
 
 export const fetchBalenaCacheData = async (signal?: AbortSignal, preventCache: boolean = false): Promise<BalenaCacheResponse> => {
@@ -75,10 +81,14 @@ export const fetchBalenaCacheData = async (signal?: AbortSignal, preventCache: b
   const fetchFromEndpoint = async (endpoint: string): Promise<BalenaCacheResponse> => {
     // Add timestamp to prevent caching if requested
     const cacheBuster = preventCache ? `?_t=${Date.now()}` : '';
-    const targetUrl = `http://${endpoint}${cacheBuster}`;
     
-    // If we're in HTTP mode, try direct connection first
-    if (!isHttps) {
+    // For HTTPS endpoints, use as is; for others prepend http://
+    const targetUrl = endpoint.includes('://') ? 
+      `${endpoint}${cacheBuster}` : 
+      `http://${endpoint}${cacheBuster}`;
+    
+    // If we're in HTTP mode or using HTTPS endpoint, try direct connection first
+    if (!isHttps || endpoint.startsWith('https://')) {
       try {
         console.log(`Attempting direct connection to: ${targetUrl}`);
         const response = await fetch(targetUrl, {

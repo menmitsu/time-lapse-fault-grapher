@@ -34,7 +34,7 @@ const BalenaCacheContent = () => {
           location,
           ...data,
           delayPercentage,
-          serverIp: '34.93.233.94' // This endpoint is currently only from one server
+          serverIp: '34.93.233.94' // Updated to the new HTTPS server
         };
       }) 
     : [];
