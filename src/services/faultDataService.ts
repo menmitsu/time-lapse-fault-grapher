@@ -61,12 +61,17 @@ const CORS_PROXIES = [
 
 const ENDPOINTS = [
   '34.93.233.94:5020/get_frame_timestamp_stats',
-  '35.200.180.212:5020/get_frame_timestamp_stats'
+  'https://35.200.180.212/get_frame_timestamp_stats'
 ];
 
 // Helper function to get base IP from endpoint
 const getBaseIp = (endpoint: string) => {
-  return endpoint.split('/')[0].split(':')[0];
+  // Extract just the domain or IP without protocol or paths
+  const url = endpoint.includes('://') ? 
+    new URL(endpoint).hostname : 
+    endpoint.split('/')[0].split(':')[0];
+  
+  return url;
 };
 
 export const fetchFaultData = async (): Promise<FaultData> => {
@@ -74,11 +79,15 @@ export const fetchFaultData = async (): Promise<FaultData> => {
   
   // Function to fetch from a single endpoint
   const fetchFromEndpoint = async (endpoint: string): Promise<FaultData> => {
-    const targetUrl = `http://${endpoint}`;
+    // For HTTPS endpoints, use as is; for others prepend http://
+    const targetUrl = endpoint.includes('://') ? 
+      endpoint : 
+      `http://${endpoint}`;
+    
     const baseIp = getBaseIp(endpoint);
     
     // If we're in HTTP mode, try direct connection first
-    if (!isHttps) {
+    if (!isHttps || endpoint.startsWith('https://')) {
       try {
         console.log(`Attempting direct connection to: ${targetUrl}`);
         const response = await fetch(targetUrl, {
