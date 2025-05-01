@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import { useBalenaCacheData } from '../hooks/useBalenaCacheData';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import BalenaCacheTable from './BalenaCacheTable';
@@ -54,7 +54,44 @@ const BalenaCacheContent = () => {
     }
   };
 
-  if (error && !isUsingMockData) {
+  // If there's an error but we still have mock data to display
+  const renderErrorAlert = () => {
+    if (!error && !isUsingMockData) return null;
+    
+    return (
+      <Alert 
+        variant={isUsingMockData ? "warning" : "destructive"} 
+        className={`mb-6 ${isUsingMockData ? "border-amber-500 bg-amber-50" : ""}`}
+      >
+        {isUsingMockData ? (
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
+        ) : (
+          <WifiOff className="h-4 w-4" />
+        )}
+        <AlertTitle>{isUsingMockData ? "Connection Issue - CORS Error" : "Error"}</AlertTitle>
+        <AlertDescription>
+          {isUsingMockData 
+            ? "Could not connect to the data source due to CORS restrictions. Displaying mock data for demonstration purposes."
+            : error}
+          <div className="mt-2">
+            <Button 
+              onClick={handleRefresh} 
+              variant="outline" 
+              size="sm"
+              className={isUsingMockData ? "text-amber-600 border-amber-300" : ""}
+              disabled={isLoading || cooldownActive}
+            >
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Try Again {cooldownActive ? `(${Math.ceil((15000 - (Date.now() - (new Date()).getTime())) / 1000)}s)` : ""}
+            </Button>
+          </div>
+        </AlertDescription>
+      </Alert>
+    );
+  };
+
+  // If there's a critical error and no mock data
+  if (error && !currentData) {
     return (
       <Alert variant="destructive" className="max-w-2xl mx-auto mt-4">
         <AlertTitle>Error</AlertTitle>
@@ -87,31 +124,11 @@ const BalenaCacheContent = () => {
             disabled={isLoading || cooldownActive}
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            {cooldownActive ? 'Cooling Down (15s)...' : isLoading ? 'Refreshing...' : 'Refresh Data'}
+            {cooldownActive ? `Cooling Down (15s)...` : isLoading ? 'Refreshing...' : 'Refresh Data'}
           </Button>
         </div>
         
-        {isUsingMockData && (
-          <Alert variant="destructive" className="mb-6 border-amber-500 bg-amber-50">
-            <AlertTriangle className="h-4 w-4 text-amber-500" />
-            <AlertTitle>Connection Issue</AlertTitle>
-            <AlertDescription>
-              Could not connect to the data source. Displaying mock data for demonstration purposes.
-              <div className="mt-2">
-                <Button 
-                  onClick={handleRefresh} 
-                  variant="outline" 
-                  size="sm"
-                  className="text-amber-600 border-amber-300"
-                  disabled={isLoading || cooldownActive}
-                >
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Try Again
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
+        {renderErrorAlert()}
         
         <div className="rounded-lg overflow-hidden border border-gray-100 shadow-sm">
           <BalenaCacheTable data={tableData} />
