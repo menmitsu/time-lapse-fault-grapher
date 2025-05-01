@@ -1,4 +1,3 @@
-
 export interface BalenaCacheData {
   cache_frames_with_delay_more_than_1s: number;
   delay_times: number[];
@@ -14,13 +13,50 @@ export interface BalenaCacheResponse {
   [location: string]: BalenaCacheData;
 }
 
-// List of CORS proxies to try in order - reusing from faultDataService
+// Extended list of CORS proxies to try in order
 const CORS_PROXIES = [
+  // Original proxies
   (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
   (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
   (url: string) => `https://cors-anywhere.herokuapp.com/${url}`,
   (url: string) => `https://proxy.cors.sh/${url}`,
-  (url: string) => `https://cors-proxy.htmldriven.com/?url=${encodeURIComponent(url)}`
+  (url: string) => `https://cors-proxy.htmldriven.com/?url=${encodeURIComponent(url)}`,
+  
+  // Additional proxies
+  (url: string) => `https://thingproxy.freeboard.io/fetch/${url}`,
+  (url: string) => `https://api.codetabs.com/v1/proxy?quest=${url}`,
+  (url: string) => `https://yacdn.org/proxy/${url}`,
+  (url: string) => `https://cors.eu.org/${url}`,
+  (url: string) => `https://cors-proxy.taskcluster.net/${url}`,
+  (url: string) => `https://crossorigin.me/${url}`,
+  (url: string) => `https://cors-proxy.uproxy.workers.dev/?${url}`,
+  (url: string) => `https://proxy.yuuk.io/${url}`,
+  (url: string) => `https://api.websiteproxy.co/browse.php?u=${encodeURIComponent(url)}`,
+  (url: string) => `https://cors-proxy.fabians.dev/?url=${encodeURIComponent(url)}`,
+  (url: string) => `https://corsproxy1.herokuapp.com/${url}`,
+  (url: string) => `https://corsmeister.herokuapp.com/${url}`,
+  (url: string) => `https://cors-proxy-1.herokuapp.com/${url}`,
+  (url: string) => `https://corsproxy.onrender.com/?${encodeURIComponent(url)}`,
+  (url: string) => `https://corsproxy-331.herokuapp.com/${url}`,
+  (url: string) => `https://worker-coral-wave-fa1c.trzqbasic.workers.dev/?${url}`,
+  (url: string) => `https://api.getproxylist.com/proxy?url=${encodeURIComponent(url)}`,
+  (url: string) => `https://open-proxy.vercel.app/api?url=${encodeURIComponent(url)}`,
+  (url: string) => `https://cloudcors.vercel.app/api?url=${encodeURIComponent(url)}`,
+  (url: string) => `https://servercors.vercel.app/?url=${encodeURIComponent(url)}`,
+  (url: string) => `https://corsproxy-beta.vercel.app/?url=${encodeURIComponent(url)}`,
+  (url: string) => `https://cors-handler.vercel.app/api?url=${encodeURIComponent(url)}`,
+  (url: string) => `https://vercel-cors.vercel.app/api?url=${encodeURIComponent(url)}`,
+  (url: string) => `https://nextjs-cors-anywhere.vercel.app/api?endpoint=${encodeURIComponent(url)}`,
+  (url: string) => `https://cors-omega.vercel.app/api?url=${encodeURIComponent(url)}`,
+  (url: string) => `https://proxy.cors.bridge.id/${url}`,
+  (url: string) => `https://cors.maisputain.ovh/${url}`,
+  (url: string) => `https://bypasscors.herokuapp.com/api/?url=${encodeURIComponent(url)}`,
+  (url: string) => `https://cors-bypass.herokuapp.com/${url}`,
+  (url: string) => `https://kjdev.onrender.com/${url}`,
+  (url: string) => `https://corsproxy-orcin.vercel.app/api?url=${encodeURIComponent(url)}`,
+  (url: string) => `https://cors-proxy.fringe.zone/${url}`,
+  (url: string) => `https://justcors.com/tl_5f7106c/${url}`,
+  (url: string) => `https://cors-xvjn.onrender.com/${url}`,
 ];
 
 const ENDPOINTS = [
