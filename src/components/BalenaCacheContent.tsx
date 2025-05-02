@@ -60,7 +60,7 @@ const BalenaCacheContent = () => {
     
     return (
       <Alert 
-        variant={isUsingMockData ? "warning" : "destructive"} 
+        variant={isUsingMockData ? "default" : "destructive"} 
         className={`mb-6 ${isUsingMockData ? "border-amber-500 bg-amber-50" : ""}`}
       >
         {isUsingMockData ? (

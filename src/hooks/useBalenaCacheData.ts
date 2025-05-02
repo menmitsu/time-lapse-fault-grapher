@@ -21,7 +21,8 @@ const generateMockData = (): BalenaCacheResponse => {
       total_1s_frames_captured: 1933,
       total_delayed_frames: 174,
       total_reconnect_instances: 0,
-      weighted_avg_delay: 2.13
+      weighted_avg_delay: 2.13,
+      median_delay: 2.0
     },
     "1ABCD_downtownStation": {
       cache_frames_with_delay_more_than_1s: 250,
@@ -31,7 +32,8 @@ const generateMockData = (): BalenaCacheResponse => {
       total_1s_frames_captured: 2400,
       total_delayed_frames: 250,
       total_reconnect_instances: 2,
-      weighted_avg_delay: 2.8
+      weighted_avg_delay: 2.8,
+      median_delay: 3.0
     },
     "2EFGH_cityCenterLoc": {
       cache_frames_with_delay_more_than_1s: 120,
@@ -41,7 +43,8 @@ const generateMockData = (): BalenaCacheResponse => {
       total_1s_frames_captured: 2100,
       total_delayed_frames: 120,
       total_reconnect_instances: 1,
-      weighted_avg_delay: 1.95
+      weighted_avg_delay: 1.95,
+      median_delay: 2.0
     }
   };
 };

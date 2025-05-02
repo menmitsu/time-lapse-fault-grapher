@@ -1,4 +1,3 @@
-
 export interface BalenaCacheData {
   cache_frames_with_delay_more_than_1s: number;
   delay_times: number[];
@@ -8,6 +7,7 @@ export interface BalenaCacheData {
   total_delayed_frames: number;
   total_reconnect_instances: number;
   weighted_avg_delay: number;
+  median_delay: number;
 }
 
 export interface BalenaCacheResponse {

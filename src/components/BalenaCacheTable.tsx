@@ -130,6 +130,16 @@ const BalenaCacheTable = ({ data }: BalenaCacheTableProps) => {
             <TableHead>
               <Button
                 variant="ghost"
+                onClick={() => requestSort('median_delay')}
+                className="h-8 whitespace-nowrap font-semibold"
+              >
+                Median Delay (s)
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TableHead>
+            <TableHead>
+              <Button
+                variant="ghost"
                 onClick={() => requestSort('start_timestamp')}
                 className="h-8 whitespace-nowrap font-semibold"
               >
@@ -184,6 +194,7 @@ const BalenaCacheTable = ({ data }: BalenaCacheTableProps) => {
                   </div>
                 </TableCell>
                 <TableCell>{row.weighted_avg_delay}</TableCell>
+                <TableCell>{row.median_delay}</TableCell>
                 <TableCell>{new Date(row.start_timestamp).toLocaleString()}</TableCell>
                 <TableCell className={isStale ? 'bg-red-50 text-red-700 font-medium' : ''}>
                   <div className="flex items-center gap-2">
