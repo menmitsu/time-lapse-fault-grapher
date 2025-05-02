@@ -22,7 +22,7 @@ const CORS_PROXIES = [
   (url: string) => `https://cors-anywhere.herokuapp.com/${url}`,
   (url: string) => `https://proxy.cors.sh/${url}`,
   (url: string) => `https://cors-proxy.htmldriven.com/?url=${encodeURIComponent(url)}`,
-  
+
   // Additional proxies
   (url: string) => `https://thingproxy.freeboard.io/fetch/${url}`,
   (url: string) => `https://api.codetabs.com/v1/proxy?quest=${url}`,
@@ -61,37 +61,39 @@ const CORS_PROXIES = [
 ];
 
 const ENDPOINTS = [
-  'https://34.93.233.94/get_balena_cache_result'
+  'http://34.93.233.94:5020/get_balena_cache_result'
 ];
 
 // Helper function to get base IP from endpoint
 const getBaseIp = (endpoint: string) => {
   // Extract just the domain or IP without protocol or paths
-  const url = endpoint.includes('://') ? 
-    new URL(endpoint).hostname : 
+  const url = endpoint.includes('://') ?
+    new URL(endpoint).hostname :
     endpoint.split('/')[0].split(':')[0];
-  
+
   return url;
 };
 
 export const fetchBalenaCacheData = async (signal?: AbortSignal, preventCache: boolean = false): Promise<BalenaCacheResponse> => {
   const isHttps = window.location.protocol === 'https:';
-  
+
   // Function to fetch from a single endpoint
   const fetchFromEndpoint = async (endpoint: string): Promise<BalenaCacheResponse> => {
     // Add timestamp to prevent caching if requested
     const cacheBuster = preventCache ? `?_t=${Date.now()}` : '';
-    
+
     // For HTTPS endpoints, use as is; for others prepend http://
-    const targetUrl = endpoint.includes('://') ? 
-      `${endpoint}${cacheBuster}` : 
+    const targetUrl = endpoint.includes('://') ?
+      `${endpoint}${cacheBuster}` :
       `http://${endpoint}${cacheBuster}`;
-    
+
+
+
     // If we're in HTTP mode or using HTTPS endpoint, try direct connection first
-    if (!isHttps || endpoint.startsWith('https://')) {
+    if (!isHttps || endpoint.startsWith('http://')) {
       try {
         console.log(`Attempting direct connection to: ${targetUrl}`);
-        const response = await fetch(targetUrl, {
+        const response = await fetch(endpoint, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -101,7 +103,7 @@ export const fetchBalenaCacheData = async (signal?: AbortSignal, preventCache: b
           },
           signal // Pass the signal to the fetch request
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           return data;
@@ -114,18 +116,18 @@ export const fetchBalenaCacheData = async (signal?: AbortSignal, preventCache: b
         console.log(`Direct connection failed for ${endpoint}, will try proxies`);
       }
     }
-    
+
     // If direct connection failed or we're on HTTPS, try the CORS proxies
     for (let i = 0; i < CORS_PROXIES.length; i++) {
       // First, check if the request has been aborted before trying a new proxy
       if (signal?.aborted) {
         throw new DOMException('Aborted', 'AbortError');
       }
-      
+
       try {
         const proxyUrl = CORS_PROXIES[i](targetUrl);
-        console.log(`Trying CORS proxy ${i+1}/${CORS_PROXIES.length} for ${endpoint}: ${proxyUrl}`);
-        
+        console.log(`Trying CORS proxy ${i + 1}/${CORS_PROXIES.length} for ${endpoint}: ${proxyUrl}`);
+
         try {
           const response = await fetch(proxyUrl, {
             method: 'GET',
@@ -138,10 +140,10 @@ export const fetchBalenaCacheData = async (signal?: AbortSignal, preventCache: b
             },
             signal // Pass the signal to the fetch request
           });
-          
+
           if (response.ok) {
             const data = await response.json();
-            console.log(`Proxy ${i+1} successful for ${endpoint}`);
+            console.log(`Proxy ${i + 1} successful for ${endpoint}`);
             return data;
           }
         } catch (regularError) {
@@ -149,14 +151,14 @@ export const fetchBalenaCacheData = async (signal?: AbortSignal, preventCache: b
           if (regularError instanceof Error && regularError.name === 'AbortError') {
             throw regularError; // Re-throw abort error to be handled by caller
           }
-          console.log(`Regular mode failed for proxy ${i+1} on ${endpoint}`);
+          console.log(`Regular mode failed for proxy ${i + 1} on ${endpoint}`);
         }
-        
+
         // We can't pass the signal to no-cors mode, so we need to check if aborted first
         if (signal?.aborted) {
           throw new DOMException('Aborted', 'AbortError');
         }
-        
+
         // Only attempt no-cors as a last resort since we can't access the response
         const response = await fetch(proxyUrl, {
           method: 'GET',
@@ -170,7 +172,7 @@ export const fetchBalenaCacheData = async (signal?: AbortSignal, preventCache: b
           },
           mode: 'no-cors'
         });
-        
+
         if (response.type === 'opaque') {
           throw new Error('Cannot access response content due to CORS restrictions');
         }
@@ -179,18 +181,18 @@ export const fetchBalenaCacheData = async (signal?: AbortSignal, preventCache: b
         if (error instanceof Error && error.name === 'AbortError') {
           throw error; // Re-throw abort error to be handled by caller
         }
-        console.log(`Proxy ${i+1} error for ${endpoint}:`, error);
+        console.log(`Proxy ${i + 1} error for ${endpoint}:`, error);
       }
     }
-    
+
     throw new Error(`All CORS proxies failed for ${endpoint}`);
   };
-  
+
   // Check if the request has been aborted before starting
   if (signal?.aborted) {
     throw new DOMException('Aborted', 'AbortError');
   }
-  
+
   try {
     // Try each endpoint until one works
     for (const endpoint of ENDPOINTS) {
@@ -198,7 +200,7 @@ export const fetchBalenaCacheData = async (signal?: AbortSignal, preventCache: b
       if (signal?.aborted) {
         throw new DOMException('Aborted', 'AbortError');
       }
-      
+
       try {
         const data = await fetchFromEndpoint(endpoint);
         return data;
@@ -210,7 +212,7 @@ export const fetchBalenaCacheData = async (signal?: AbortSignal, preventCache: b
         console.error(`Failed to fetch from ${endpoint}:`, error);
       }
     }
-    
+
     throw new Error('Failed to fetch data from all endpoints');
   } catch (error) {
     // Final check if this is an abort error
