@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useCleaningData } from '../hooks/useCleaningData';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -44,11 +43,13 @@ const CleaningStatistics = () => {
           ? (framesMissed / data.total_frames_should_have_recieved_since_first_frame) * 100
           : 0;
         
+        // Ensure serverIp is always present
         return {
           location,
           ...data,
           frames_missed: framesMissed,
-          frames_missed_percentage: parseFloat(missPercentage.toFixed(2))
+          frames_missed_percentage: parseFloat(missPercentage.toFixed(2)),
+          serverIp: data.serverIp || '35.244.44.28:5020' // Default value if serverIp is missing
         };
       }) 
     : [];

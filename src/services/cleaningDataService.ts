@@ -1,3 +1,4 @@
+
 export interface CleaningData {
   [location: string]: LocationCleaningData;
 }
@@ -10,7 +11,7 @@ export interface LocationCleaningData {
   frames_with_20s_delay: number;
   total_frames_recieved_since_first_frame: number;
   total_frames_should_have_recieved_since_first_frame: number;
-  serverIp?: string;
+  serverIp: string;  // Changed from optional to required
 }
 
 // Extended list of CORS proxies to try in order, reusing the same approach as in faultDataService
@@ -140,7 +141,7 @@ function processCleaningData(data: any): CleaningData {
   Object.entries(data).forEach(([location, locationData]: [string, any]) => {
     processedData[location] = {
       ...locationData,
-      serverIp: '35.244.44.28:5020' // Identify the source server
+      serverIp: '35.244.44.28:5020' // Always add serverIp as required
     } as LocationCleaningData;
   });
   
