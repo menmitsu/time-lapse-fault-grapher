@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useCleaningData } from '../hooks/useCleaningData';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -35,13 +36,19 @@ const CleaningStatistics = () => {
   const tableData = currentData 
     ? Object.entries(currentData).map(([location, data]) => {
         // Calculate the frames missed
-        const framesMissed = data.total_frames_should_have_recieved_since_first_frame - 
-                             data.total_frames_recieved_since_first_frame;
+        let framesMissed = data.total_frames_should_have_recieved_since_first_frame - 
+                           data.total_frames_recieved_since_first_frame;
+        
+        // Ensure framesMissed is never negative
+        framesMissed = Math.max(0, framesMissed);
         
         // Calculate miss percentage
-        const missPercentage = data.total_frames_should_have_recieved_since_first_frame > 0 
+        let missPercentage = data.total_frames_should_have_recieved_since_first_frame > 0 
           ? (framesMissed / data.total_frames_should_have_recieved_since_first_frame) * 100
           : 0;
+        
+        // Ensure missPercentage is never negative
+        missPercentage = Math.max(0, missPercentage);
         
         // Ensure serverIp is always present
         return {

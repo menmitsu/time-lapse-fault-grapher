@@ -29,14 +29,20 @@ type SortableFields = keyof (LocationCleaningData & {
 });
 
 const getBackgroundColor = (framesMissed: number) => {
-  if (framesMissed < 100) return 'bg-[#F2FCE2]';
-  if (framesMissed <= 250) return 'bg-[#FEF7CD]';
+  // Ensure framesMissed is never negative before checking thresholds
+  const nonNegativeFramesMissed = Math.max(0, framesMissed);
+  
+  if (nonNegativeFramesMissed < 100) return 'bg-[#F2FCE2]';
+  if (nonNegativeFramesMissed <= 250) return 'bg-[#FEF7CD]';
   return 'bg-red-50';
 };
 
 const getTextColor = (framesMissed: number) => {
-  if (framesMissed < 100) return 'text-green-700';
-  if (framesMissed <= 250) return 'text-yellow-700';
+  // Ensure framesMissed is never negative before checking thresholds
+  const nonNegativeFramesMissed = Math.max(0, framesMissed);
+  
+  if (nonNegativeFramesMissed < 100) return 'text-green-700';
+  if (nonNegativeFramesMissed <= 250) return 'text-yellow-700';
   return 'text-red-700';
 };
 
@@ -49,7 +55,20 @@ const CleaningTable = ({ data }: CleaningTableProps) => {
     direction: 'desc'
   });
 
-  const sortedData = [...data].sort((a, b) => {
+  // Process data to ensure no negative values
+  const processedData = data.map(item => ({
+    ...item,
+    // Ensure all numerical values that should never be negative are non-negative
+    frames_missed: Math.max(0, item.frames_missed),
+    frames_missed_percentage: Math.max(0, item.frames_missed_percentage),
+    frames_with_10s_delay: Math.max(0, item.frames_with_10s_delay),
+    frames_with_15s_delay: Math.max(0, item.frames_with_15s_delay),
+    frames_with_20s_delay: Math.max(0, item.frames_with_20s_delay),
+    total_frames_recieved_since_first_frame: Math.max(0, item.total_frames_recieved_since_first_frame),
+    total_frames_should_have_recieved_since_first_frame: Math.max(0, item.total_frames_should_have_recieved_since_first_frame)
+  }));
+
+  const sortedData = [...processedData].sort((a, b) => {
     if (a[sortConfig.key] < b[sortConfig.key]) {
       return sortConfig.direction === 'asc' ? -1 : 1;
     }
