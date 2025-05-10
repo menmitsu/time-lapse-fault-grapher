@@ -27,14 +27,18 @@ const BalenaCacheContent = () => {
 
   const tableData = currentData 
     ? Object.entries(currentData).map(([location, data]) => {
-        // Calculate the delay percentage
-        const delayPercentage = (data.total_delayed_frames / data.total_1s_frames_captured) * 100;
+        // Calculate the delay percentage and ensure it's never negative
+        const delayPercentage = Math.max(0, (data.total_delayed_frames / data.total_1s_frames_captured) * 100);
         
         return {
           location,
           ...data,
           delayPercentage,
-          serverIp: '34.93.233.94' // Updated to the new HTTPS server
+          serverIp: '34.93.233.94', // Updated to the new HTTPS server
+          // Add missing required properties with default values
+          average_upload_time_ms: data.average_upload_time_ms || 0,
+          min_upload_time_ms: data.min_upload_time_ms || 0,
+          max_upload_time_ms: data.max_upload_time_ms || 0
         };
       }) 
     : [];
