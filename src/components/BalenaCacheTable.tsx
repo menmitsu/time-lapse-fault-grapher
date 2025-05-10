@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Table,
@@ -10,37 +9,40 @@ import {
 } from "@/components/ui/table";
 import { ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BalenaCacheData } from '../services/balenaCacheService';
-import { Badge } from './ui/badge';
 
-interface BalenaCacheTableProps {
-  data: Array<{ 
-    location: string;
-    delayPercentage: number;
-    serverIp: string;
-  } & BalenaCacheData>;
+interface BalenaData {
+  location: string;
+  total_delayed_frames: number;
+  total_1s_frames_captured: number;
+  average_upload_time_ms: number;
+  min_upload_time_ms: number;
+  max_upload_time_ms: number;
+  delayPercentage: number;
+  serverIp: string;
 }
 
-type SortableFields = keyof (BalenaCacheData & { location: string; delayPercentage: number; serverIp: string });
+interface BalenaCacheTableProps {
+  data: BalenaData[];
+}
 
-const getBackgroundColor = (percentage: number) => {
-  if (percentage < 5) return 'bg-[#F2FCE2]';
-  if (percentage <= 10) return 'bg-[#FEF7CD]';
+type SortableFields = keyof BalenaData;
+
+const getBackgroundColor = (delayPercentage: number) => {
+  // Ensure delayPercentage is never negative before checking thresholds
+  const nonNegativeDelayPercentage = Math.max(0, delayPercentage);
+  
+  if (nonNegativeDelayPercentage < 5) return 'bg-green-50';
+  if (nonNegativeDelayPercentage <= 15) return 'bg-yellow-50';
   return 'bg-red-50';
 };
 
-const getTextColor = (percentage: number) => {
-  if (percentage < 5) return 'text-green-700';
-  if (percentage <= 10) return 'text-yellow-700';
-  return 'text-red-700';
-};
-
-const isFrameStale = (timestamp: string) => {
-  const frameTime = new Date(timestamp).getTime();
-  const currentTime = new Date().getTime();
-  const fiveMinutesInMs = 5 * 60 * 1000;
+const getTextColor = (delayPercentage: number) => {
+  // Ensure delayPercentage is never negative before checking thresholds
+  const nonNegativeDelayPercentage = Math.max(0, delayPercentage);
   
-  return (currentTime - frameTime) > fiveMinutesInMs;
+  if (nonNegativeDelayPercentage < 5) return 'text-green-700';
+  if (nonNegativeDelayPercentage <= 15) return 'text-yellow-700';
+  return 'text-red-700';
 };
 
 const BalenaCacheTable = ({ data }: BalenaCacheTableProps) => {
@@ -52,7 +54,19 @@ const BalenaCacheTable = ({ data }: BalenaCacheTableProps) => {
     direction: 'desc'
   });
 
-  const sortedData = [...data].sort((a, b) => {
+  // Process data to ensure no negative values
+  const processedData = data.map(item => ({
+    ...item,
+    // Ensure all numerical values that should never be negative are non-negative
+    total_delayed_frames: Math.max(0, item.total_delayed_frames),
+    total_1s_frames_captured: Math.max(0, item.total_1s_frames_captured),
+    average_upload_time_ms: Math.max(0, item.average_upload_time_ms),
+    min_upload_time_ms: Math.max(0, item.min_upload_time_ms),
+    max_upload_time_ms: Math.max(0, item.max_upload_time_ms),
+    delayPercentage: Math.max(0, item.delayPercentage)
+  }));
+
+  const sortedData = [...processedData].sort((a, b) => {
     if (a[sortConfig.key] < b[sortConfig.key]) {
       return sortConfig.direction === 'asc' ? -1 : 1;
     }
@@ -90,6 +104,16 @@ const BalenaCacheTable = ({ data }: BalenaCacheTableProps) => {
             <TableHead>
               <Button
                 variant="ghost"
+                onClick={() => requestSort('delayPercentage')}
+                className="h-8 whitespace-nowrap font-semibold"
+              >
+                Delay Percentage
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TableHead>
+            <TableHead>
+              <Button
+                variant="ghost"
                 onClick={() => requestSort('total_delayed_frames')}
                 className="h-8 whitespace-nowrap font-semibold"
               >
@@ -103,111 +127,61 @@ const BalenaCacheTable = ({ data }: BalenaCacheTableProps) => {
                 onClick={() => requestSort('total_1s_frames_captured')}
                 className="h-8 whitespace-nowrap font-semibold"
               >
-                Total Frames
+                Total Frames Captured
                 <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
             </TableHead>
             <TableHead>
               <Button
                 variant="ghost"
-                onClick={() => requestSort('delayPercentage')}
+                onClick={() => requestSort('average_upload_time_ms')}
                 className="h-8 whitespace-nowrap font-semibold"
               >
-                Delay %
+                Avg Upload Time (ms)
                 <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
             </TableHead>
             <TableHead>
               <Button
                 variant="ghost"
-                onClick={() => requestSort('weighted_avg_delay')}
+                onClick={() => requestSort('min_upload_time_ms')}
                 className="h-8 whitespace-nowrap font-semibold"
               >
-                Avg Delay (s)
+                Min Upload Time (ms)
                 <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
             </TableHead>
             <TableHead>
               <Button
                 variant="ghost"
-                onClick={() => requestSort('median_delay')}
+                onClick={() => requestSort('max_upload_time_ms')}
                 className="h-8 whitespace-nowrap font-semibold"
               >
-                Median Delay (s)
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-              </Button>
-            </TableHead>
-            <TableHead>
-              <Button
-                variant="ghost"
-                onClick={() => requestSort('start_timestamp')}
-                className="h-8 whitespace-nowrap font-semibold"
-              >
-                First Frame
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-              </Button>
-            </TableHead>
-            <TableHead>
-              <Button
-                variant="ghost"
-                onClick={() => requestSort('last_frame_timestamp')}
-                className="h-8 whitespace-nowrap font-semibold"
-              >
-                Last Frame
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-              </Button>
-            </TableHead>
-            <TableHead>
-              <Button
-                variant="ghost"
-                onClick={() => requestSort('total_reconnect_instances')}
-                className="h-8 whitespace-nowrap font-semibold"
-              >
-                Reconnects
+                Max Upload Time (ms)
                 <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
             </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedData.map((row) => {
-            const isStale = isFrameStale(row.last_frame_timestamp);
-            
-            return (
-              <TableRow key={row.location} className="hover:bg-gray-50/50">
-                <TableCell className="font-medium">
-                  <div className="flex flex-col">
-                    <span>{row.location}</span>
-                    <span className="text-xs text-gray-500">{row.serverIp}</span>
-                  </div>
-                </TableCell>
-                <TableCell>{row.total_delayed_frames}</TableCell>
-                <TableCell>{row.total_1s_frames_captured}</TableCell>
-                <TableCell 
-                  className={`font-medium ${getBackgroundColor(row.delayPercentage)} ${getTextColor(row.delayPercentage)}`}
-                >
-                  <div className="flex items-center gap-2">
-                    {row.delayPercentage.toFixed(2)}%
-                    {row.delayPercentage > 5 && (
-                      <Badge variant="destructive" className="text-xs">High</Badge>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>{row.weighted_avg_delay}</TableCell>
-                <TableCell>{row.median_delay}</TableCell>
-                <TableCell>{new Date(row.start_timestamp).toLocaleString()}</TableCell>
-                <TableCell className={isStale ? 'bg-red-50 text-red-700 font-medium' : ''}>
-                  <div className="flex items-center gap-2">
-                    {new Date(row.last_frame_timestamp).toLocaleString()}
-                    {isStale && (
-                      <Badge variant="destructive" className="text-xs">Stale</Badge>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>{row.total_reconnect_instances}</TableCell>
-              </TableRow>
-            );
-          })}
+          {sortedData.map((row) => (
+            <TableRow key={row.location} className="hover:bg-gray-50/50">
+              <TableCell className="font-medium">
+                <div className="flex flex-col">
+                  <span>{row.location}</span>
+                  <span className="text-xs text-gray-500">{row.serverIp}</span>
+                </div>
+              </TableCell>
+              <TableCell className={`font-medium ${getBackgroundColor(row.delayPercentage)} ${getTextColor(row.delayPercentage)}`}>
+                {row.delayPercentage.toFixed(2)}%
+              </TableCell>
+              <TableCell>{row.total_delayed_frames}</TableCell>
+              <TableCell>{row.total_1s_frames_captured}</TableCell>
+              <TableCell>{row.average_upload_time_ms.toFixed(2)}</TableCell>
+              <TableCell>{row.min_upload_time_ms}</TableCell>
+              <TableCell>{row.max_upload_time_ms}</TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </div>

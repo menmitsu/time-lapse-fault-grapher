@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Table,
@@ -22,20 +21,25 @@ interface SortableTableProps {
 
 type SortableFields = keyof (LocationData & { 
   location: string; 
-  frames_missed: number; 
-  serverIp: string; 
-  frames_missed_percentage?: number;
+  frames_missed: number;
+  serverIp: string;
 });
 
 const getBackgroundColor = (framesMissed: number) => {
-  if (framesMissed < 100) return 'bg-[#F2FCE2]';
-  if (framesMissed <= 250) return 'bg-[#FEF7CD]';
+  // Ensure framesMissed is never negative before checking thresholds
+  const nonNegativeFramesMissed = Math.max(0, framesMissed);
+  
+  if (nonNegativeFramesMissed < 100) return 'bg-green-50';
+  if (nonNegativeFramesMissed <= 250) return 'bg-yellow-50';
   return 'bg-red-50';
 };
 
 const getTextColor = (framesMissed: number) => {
-  if (framesMissed < 100) return 'text-green-700';
-  if (framesMissed <= 250) return 'text-yellow-700';
+  // Ensure framesMissed is never negative before checking thresholds
+  const nonNegativeFramesMissed = Math.max(0, framesMissed);
+  
+  if (nonNegativeFramesMissed < 100) return 'text-green-700';
+  if (nonNegativeFramesMissed <= 250) return 'text-yellow-700';
   return 'text-red-700';
 };
 
@@ -48,19 +52,19 @@ const SortableTable = ({ data }: SortableTableProps) => {
     direction: 'desc'
   });
 
-  // Calculate the percentage frames missed for each entry
-  const dataWithPercentage = data.map(entry => {
-    const percentage = entry.total_frames_should_have_recieved_since_first_frame > 0 
-      ? (entry.frames_missed / entry.total_frames_should_have_recieved_since_first_frame) * 100
-      : 0;
-    
-    return {
-      ...entry,
-      frames_missed_percentage: parseFloat(percentage.toFixed(2))
-    };
-  });
+  // Process data to ensure no negative values
+  const processedData = data.map(item => ({
+    ...item,
+    // Ensure all numerical values that should never be negative are non-negative
+    frames_missed: Math.max(0, item.frames_missed),
+    frames_with_5s_delay: item.frames_with_5s_delay !== undefined ? Math.max(0, item.frames_with_5s_delay) : 0,
+    frames_with_10s_delay: Math.max(0, item.frames_with_10s_delay),
+    frames_with_15s_delay: Math.max(0, item.frames_with_15s_delay),
+    total_frames_recieved_since_first_frame: Math.max(0, item.total_frames_recieved_since_first_frame),
+    total_frames_should_have_recieved_since_first_frame: Math.max(0, item.total_frames_should_have_recieved_since_first_frame)
+  }));
 
-  const sortedData = [...dataWithPercentage].sort((a, b) => {
+  const sortedData = [...processedData].sort((a, b) => {
     if (a[sortConfig.key] < b[sortConfig.key]) {
       return sortConfig.direction === 'asc' ? -1 : 1;
     }
@@ -128,16 +132,6 @@ const SortableTable = ({ data }: SortableTableProps) => {
             <TableHead>
               <Button
                 variant="ghost"
-                onClick={() => requestSort('frames_missed_percentage')}
-                className="h-8 whitespace-nowrap font-semibold"
-              >
-                Frames Missed (%)
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-              </Button>
-            </TableHead>
-            <TableHead>
-              <Button
-                variant="ghost"
                 onClick={() => requestSort('total_frames_should_have_recieved_since_first_frame')}
                 className="h-8 whitespace-nowrap font-semibold"
               >
@@ -148,10 +142,10 @@ const SortableTable = ({ data }: SortableTableProps) => {
             <TableHead>
               <Button
                 variant="ghost"
-                onClick={() => requestSort('frames_with_5s_delay')}
+                onClick={() => requestSort('frames_with_15s_delay')}
                 className="h-8 whitespace-nowrap font-semibold"
               >
-                5s Delays
+                15s Delays
                 <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
             </TableHead>
@@ -168,10 +162,10 @@ const SortableTable = ({ data }: SortableTableProps) => {
             <TableHead>
               <Button
                 variant="ghost"
-                onClick={() => requestSort('frames_with_15s_delay')}
+                onClick={() => requestSort('frames_with_5s_delay')}
                 className="h-8 whitespace-nowrap font-semibold"
               >
-                15s Delays
+                5s Delays
                 <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
             </TableHead>
@@ -203,15 +197,10 @@ const SortableTable = ({ data }: SortableTableProps) => {
               >
                 {row.frames_missed}
               </TableCell>
-              <TableCell 
-                className={`font-medium ${getBackgroundColor(row.frames_missed)} ${getTextColor(row.frames_missed)}`}
-              >
-                {row.frames_missed_percentage}%
-              </TableCell>
               <TableCell>{row.total_frames_should_have_recieved_since_first_frame}</TableCell>
-              <TableCell>{row.frames_with_5s_delay}</TableCell>
-              <TableCell>{row.frames_with_10s_delay}</TableCell>
               <TableCell>{row.frames_with_15s_delay}</TableCell>
+              <TableCell>{row.frames_with_10s_delay}</TableCell>
+              <TableCell>{row.frames_with_5s_delay}</TableCell>
               <TableCell>{row.total_frames_recieved_since_first_frame}</TableCell>
             </TableRow>
           ))}

@@ -26,9 +26,15 @@ const FaultGraph = () => {
   }, []);
 
   const tableData = currentData ? Object.entries(currentData).map(([location, data]) => {
-    const framesMissed = data.total_frames_should_have_recieved_since_first_frame - data.total_frames_recieved_since_first_frame;
+    // Calculate frames missed and ensure it's never negative
+    const framesMissed = Math.max(0, 
+      data.total_frames_should_have_recieved_since_first_frame - 
+      data.total_frames_recieved_since_first_frame
+    );
+    
     // Use the serverIp from the data object, or extract it from the location if needed
     const serverIp = data.serverIp || (location.includes('34.93.233.94') ? '34.93.233.94' : '35.200.180.212');
+    
     return {
       location,
       ...data,
