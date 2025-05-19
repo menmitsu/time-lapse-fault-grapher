@@ -15,15 +15,12 @@ export interface CenterData {
 // Function to fetch data from the Google Sheet
 export const fetchCenterData = async (): Promise<CenterData[]> => {
   try {
-    // Google Sheets URL to fetch as JSON
-    // Using a published sheet URL that works with CORS
+    // For CSV, we'll use a direct CSV export URL from Google Sheets
     const sheetId = '1kz4VPEAZWKR7M8GDgZ9aHz3ig7LX-vSi35kuNCDU9PM';
-    const sheetGid = '1497227990';
+    const gid = '1497227990';
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
     
-    // Using the public sheet URL format that returns JSON
-    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${sheetGid}`;
-    
-    console.log("Fetching center data from:", url);
+    console.log("Fetching center data from CSV URL:", url);
     
     const response = await fetch(url);
     
@@ -31,56 +28,43 @@ export const fetchCenterData = async (): Promise<CenterData[]> => {
       throw new Error(`Failed to fetch data: ${response.status}`);
     }
     
-    // Google's response is not pure JSON, it's like `/*O_o*/google.visualization.Query.setResponse({...});`
-    // We need to extract the JSON object from this response
-    const text = await response.text();
-    console.log("Response text preview:", text.substring(0, 200));
+    const csvText = await response.text();
+    console.log("CSV data loaded, length:", csvText.length);
     
-    // Extract the JSON part
-    const jsonStartIndex = text.indexOf('{');
-    const jsonEndIndex = text.lastIndexOf('}') + 1;
+    // Parse CSV to JSON
+    const rows = parseCSV(csvText);
+    console.log("Parsed CSV rows:", rows.length);
     
-    if (jsonStartIndex < 0 || jsonEndIndex <= 0) {
-      console.error("Failed to extract JSON from response:", text);
-      throw new Error("Invalid response format from Google Sheets");
+    if (rows.length < 2) {
+      console.error("Not enough rows in CSV data");
+      throw new Error("Invalid CSV data structure");
     }
+
+    // First row is headers
+    const headers = rows[0];
     
-    const jsonText = text.substring(jsonStartIndex, jsonEndIndex);
-    const data = JSON.parse(jsonText);
-    
-    console.log("Parsed data:", data);
-    
-    // Parse the table data
-    if (!data.table || !data.table.cols || !data.table.rows) {
-      console.error("Unexpected data structure:", data);
-      throw new Error("Unexpected data structure from Google Sheets");
-    }
-    
-    const headers = data.table.cols.map((col: any) => col.label);
-    console.log("Headers:", headers);
-    
-    const rows = data.table.rows.map((row: any) => {
-      const rowData: any = {};
-      row.c.forEach((cell: any, index: number) => {
-        const header = headers[index] || `column${index}`;
-        rowData[header] = cell ? (cell.v !== null ? cell.v : '') : '';
+    // Map the rows to our interface
+    const centerData: CenterData[] = rows.slice(1).map((row, index) => {
+      const item: CenterData = {
+        id: index.toString(),
+        center: '',
+        classroom: '',
+        dataGatheringComplete: '',
+        reEvaluation: '',
+        notes: '',
+        date: ''
+      };
+      
+      // Map each column to the corresponding header
+      headers.forEach((header, i) => {
+        if (i < row.length) {
+          const key = headerToKey(header);
+          item[key] = row[i];
+        }
       });
-      return rowData;
+      
+      return item;
     });
-    
-    console.log("Parsed rows:", rows);
-    
-    // Map to our interface structure
-    const centerData: CenterData[] = rows.map((row: any, index: number) => ({
-      id: index.toString(),
-      center: row['Center'] || '',
-      classroom: row['Classroom'] || '',
-      dataGatheringComplete: row['Data Gathering Complete'] || '',
-      reEvaluation: row['Re-evaluation'] || '',
-      notes: row['Notes'] || '',
-      date: row['Date'] || '',
-      ...row // Include all original fields too
-    }));
     
     console.log("Mapped center data:", centerData);
     
@@ -91,6 +75,51 @@ export const fetchCenterData = async (): Promise<CenterData[]> => {
     return [];
   }
 };
+
+// Helper function to parse CSV
+function parseCSV(text: string): string[][] {
+  // Split by newlines
+  const lines = text.split('\n');
+  
+  return lines.map(line => {
+    const row: string[] = [];
+    let insideQuotes = false;
+    let currentValue = '';
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        insideQuotes = !insideQuotes;
+      } else if (char === ',' && !insideQuotes) {
+        row.push(currentValue);
+        currentValue = '';
+      } else {
+        currentValue += char;
+      }
+    }
+    
+    // Push the last value
+    row.push(currentValue);
+    
+    return row;
+  }).filter(row => row.length > 0 && row.some(cell => cell.trim() !== ''));
+}
+
+// Helper function to convert header to camelCase key
+function headerToKey(header: string): string {
+  // Map Google Sheet headers to our interface properties
+  const headerMap: Record<string, string> = {
+    'Center': 'center',
+    'Classroom': 'classroom',
+    'Data Gathering Complete': 'dataGatheringComplete',
+    'Re-evaluation': 'reEvaluation',
+    'Notes': 'notes',
+    'Date': 'date'
+  };
+  
+  return headerMap[header] || header.toLowerCase().replace(/\s+/g, '');
+}
 
 // Function to sort and process center data with priority for highlighted rows
 export const processCenterData = (data: CenterData[]): CenterData[] => {

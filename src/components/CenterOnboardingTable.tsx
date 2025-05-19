@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 interface CenterOnboardingTableProps {
   data: CenterData[];
@@ -28,35 +29,49 @@ const CenterOnboardingTable = ({ data }: CenterOnboardingTableProps) => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((item) => (
-            <TableRow 
-              key={item.id}
-              className={isHighlightedRow(item) ? "bg-red-50" : ""}
-            >
-              <TableCell className="font-medium">{item.center}</TableCell>
-              <TableCell>{item.classroom}</TableCell>
-              <TableCell>
-                <span 
-                  className={item.dataGatheringComplete?.toLowerCase() === 'no' 
-                    ? "text-red-600 font-semibold" 
-                    : ""}
-                >
-                  {item.dataGatheringComplete}
-                </span>
+          {data.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center py-4 text-gray-500">
+                No data available
               </TableCell>
-              <TableCell>
-                <span 
-                  className={item.reEvaluation?.toLowerCase() === 'no' 
-                    ? "text-red-600 font-semibold" 
-                    : ""}
-                >
-                  {item.reEvaluation}
-                </span>
-              </TableCell>
-              <TableCell>{item.notes}</TableCell>
-              <TableCell>{item.date}</TableCell>
             </TableRow>
-          ))}
+          ) : (
+            data.map((item) => (
+              <TableRow 
+                key={item.id}
+                className={isHighlightedRow(item) ? "bg-red-50" : ""}
+              >
+                <TableCell className="font-medium">{item.center}</TableCell>
+                <TableCell>{item.classroom}</TableCell>
+                <TableCell>
+                  <Badge 
+                    variant={item.dataGatheringComplete?.toLowerCase() === 'yes' ? "success" : "destructive"}
+                    className={item.dataGatheringComplete?.toLowerCase() === 'yes' 
+                      ? "bg-green-100 text-green-800 hover:bg-green-100" 
+                      : "bg-red-100 text-red-800 hover:bg-red-100"}
+                  >
+                    {item.dataGatheringComplete || 'Unknown'}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge 
+                    variant={item.reEvaluation?.toLowerCase() === 'yes' ? "success" : "destructive"}
+                    className={item.reEvaluation?.toLowerCase() === 'yes' 
+                      ? "bg-green-100 text-green-800 hover:bg-green-100" 
+                      : "bg-red-100 text-red-800 hover:bg-red-100"}
+                  >
+                    {item.reEvaluation || 'Unknown'}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="max-w-xs truncate">
+                    {item.notes}
+                  </div>
+                </TableCell>
+                <TableCell>{item.date}</TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
     </div>

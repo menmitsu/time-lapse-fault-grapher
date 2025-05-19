@@ -62,6 +62,7 @@ export function useCenterOnboardingData() {
         const processedData = processCenterData(fetchedData);
         console.log("Processed center data:", processedData);
         setData(processedData);
+        toast.success(`Loaded ${processedData.length} center records`);
       } else {
         // Use mock data if API returns empty
         console.log("Using mock data due to empty API response");
