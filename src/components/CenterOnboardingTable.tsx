@@ -45,7 +45,7 @@ const CenterOnboardingTable = ({ data }: CenterOnboardingTableProps) => {
                 <TableCell>{item.classroom}</TableCell>
                 <TableCell>
                   <Badge 
-                    variant={item.dataGatheringComplete?.toLowerCase() === 'yes' ? "success" : "destructive"}
+                    variant={item.dataGatheringComplete?.toLowerCase() === 'yes' ? "default" : "destructive"}
                     className={item.dataGatheringComplete?.toLowerCase() === 'yes' 
                       ? "bg-green-100 text-green-800 hover:bg-green-100" 
                       : "bg-red-100 text-red-800 hover:bg-red-100"}
@@ -55,7 +55,7 @@ const CenterOnboardingTable = ({ data }: CenterOnboardingTableProps) => {
                 </TableCell>
                 <TableCell>
                   <Badge 
-                    variant={item.reEvaluation?.toLowerCase() === 'yes' ? "success" : "destructive"}
+                    variant={item.reEvaluation?.toLowerCase() === 'yes' ? "default" : "destructive"}
                     className={item.reEvaluation?.toLowerCase() === 'yes' 
                       ? "bg-green-100 text-green-800 hover:bg-green-100" 
                       : "bg-red-100 text-red-800 hover:bg-red-100"}
