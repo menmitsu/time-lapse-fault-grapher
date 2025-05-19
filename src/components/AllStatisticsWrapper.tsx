@@ -11,17 +11,17 @@ interface AllStatisticsWrapperProps {
 
 const AllStatisticsWrapper = ({ isActive }: AllStatisticsWrapperProps) => {
   const { refreshData: refreshFaultData } = useFaultData();
-  const { loadData: loadBalenaData } = useBalenaCacheData();
-  const { loadData: loadCleaningData } = useCleaningData();
+  const { refreshData: refreshBalenaData } = useBalenaCacheData();
+  const { refreshData: refreshCleaningData } = useCleaningData();
   
   useEffect(() => {
     if (isActive) {
       console.log("All Stats tab is active, loading all data...");
       refreshFaultData();
-      loadBalenaData();
-      loadCleaningData();
+      refreshBalenaData();
+      refreshCleaningData();
     }
-  }, [isActive, refreshFaultData, loadBalenaData, loadCleaningData]);
+  }, [isActive, refreshFaultData, refreshBalenaData, refreshCleaningData]);
 
   return <AllStatistics />;
 };

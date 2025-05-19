@@ -8,14 +8,14 @@ interface CleaningStatisticsWrapperProps {
 }
 
 const CleaningStatisticsWrapper = ({ isActive }: CleaningStatisticsWrapperProps) => {
-  const { loadData } = useCleaningData();
+  const { refreshData } = useCleaningData();
   
   useEffect(() => {
     if (isActive) {
       console.log("Cleaning Stats tab is active, loading data...");
-      loadData();
+      refreshData();
     }
-  }, [isActive, loadData]);
+  }, [isActive, refreshData]);
 
   return <CleaningStatistics />;
 };
