@@ -12,7 +12,7 @@ interface CenterOnboardingProps {
 }
 
 const CenterOnboarding = ({ isActive }: CenterOnboardingProps) => {
-  const { data, isLoading, error, isUsingMockData, loadData } = useCenterOnboardingData();
+  const { data, headers, isLoading, error, isUsingMockData, loadData } = useCenterOnboardingData();
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Only load data when the tab becomes active and hasn't been initialized
@@ -32,7 +32,10 @@ const CenterOnboarding = ({ isActive }: CenterOnboardingProps) => {
             Center Onboarding Status
           </h2>
           <Button
-            onClick={loadData}
+            onClick={() => {
+              loadData();
+              setIsInitialized(true);
+            }}
             className="flex items-center gap-2"
             variant="outline"
             disabled={isLoading}
@@ -81,7 +84,7 @@ const CenterOnboarding = ({ isActive }: CenterOnboardingProps) => {
           </div>
         ) : (
           data.length > 0 ? (
-            <CenterOnboardingTable data={data} />
+            <CenterOnboardingTable headers={headers} data={data} />
           ) : (
             <div className="text-center py-10 text-gray-500">
               No center data available

@@ -1,51 +1,41 @@
 
 import { useState, useCallback } from 'react';
-import { CenterData, fetchCenterData, processCenterData } from '../services/centerOnboardingService';
+import { CenterData, fetchCenterData } from '../services/centerOnboardingService';
 import { toast } from "@/components/ui/sonner";
 
 export function useCenterOnboardingData() {
   const [data, setData] = useState<CenterData[]>([]);
+  const [headers, setHeaders] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isUsingMockData, setIsUsingMockData] = useState<boolean>(false);
 
   // Mock data for testing or when API fails
+  const mockHeaders = ["ID", "Center", "Classroom", "Status", "Date"];
   const mockData: CenterData[] = [
     {
       id: '1',
-      center: 'Delhi Center',
-      classroom: 'Classroom A',
-      dataGatheringComplete: 'Yes',
-      reEvaluation: 'No',
-      notes: 'Needs re-evaluation due to technical issues',
-      date: '2025-05-10'
+      "ID": "1",
+      "Center": "Delhi Center",
+      "Classroom": "Classroom A",
+      "Status": "Complete",
+      "Date": "2025-05-10"
     },
     {
       id: '2',
-      center: 'Mumbai Center',
-      classroom: 'Classroom B',
-      dataGatheringComplete: 'No',
-      reEvaluation: 'Yes',
-      notes: 'Data gathering in progress',
-      date: '2025-05-12'
+      "ID": "2",
+      "Center": "Mumbai Center",
+      "Classroom": "Classroom B",
+      "Status": "Incomplete",
+      "Date": "2025-05-12"
     },
     {
       id: '3',
-      center: 'Bangalore Center',
-      classroom: 'Classroom C',
-      dataGatheringComplete: 'Yes',
-      reEvaluation: 'Yes',
-      notes: 'All complete',
-      date: '2025-05-15'
-    },
-    {
-      id: '4',
-      center: 'Chennai Center',
-      classroom: 'Classroom D',
-      dataGatheringComplete: 'No',
-      reEvaluation: 'No',
-      notes: 'Critical: Needs immediate attention',
-      date: '2025-05-08'
+      "ID": "3",
+      "Center": "Bangalore Center",
+      "Classroom": "Classroom C",
+      "Status": "Complete",
+      "Date": "2025-05-15"
     }
   ];
 
@@ -58,27 +48,28 @@ export function useCenterOnboardingData() {
     setError(null);
     try {
       console.log("Fetching center data...");
-      const fetchedData = await fetchCenterData();
-      console.log("Fetched data length:", fetchedData.length);
+      const result = await fetchCenterData();
+      console.log("Fetched data length:", result.data.length);
       
-      if (fetchedData.length > 0) {
+      if (result.data.length > 0 && result.headers.length > 0) {
         setIsUsingMockData(false);
-        const processedData = processCenterData(fetchedData);
-        console.log("Processed center data:", processedData);
-        setData(processedData);
-        toast.success(`Loaded ${processedData.length} center records`);
+        setHeaders(result.headers);
+        setData(result.data);
+        toast.success(`Loaded ${result.data.length} center records`);
       } else {
         // Use mock data if API returns empty
         console.log("Using mock data due to empty API response");
         setIsUsingMockData(true);
-        setData(processCenterData(mockData));
+        setHeaders(mockHeaders);
+        setData(mockData);
         toast.warning("Using mock data for center onboarding");
       }
     } catch (error) {
       console.error("Error loading center data:", error);
       setError("Failed to load center data. Using mock data instead.");
       setIsUsingMockData(true);
-      setData(processCenterData(mockData));
+      setHeaders(mockHeaders);
+      setData(mockData);
       toast.error("Failed to load real data, using mock data");
     } finally {
       setIsLoading(false);
@@ -87,6 +78,7 @@ export function useCenterOnboardingData() {
 
   return {
     data,
+    headers,
     isLoading,
     error,
     isUsingMockData,

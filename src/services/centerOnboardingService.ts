@@ -1,20 +1,12 @@
-
 import { toast } from "@/components/ui/sonner";
 
 export interface CenterData {
   id: string;
-  center: string;
-  classroom: string;
-  dataGatheringComplete: string;
-  reEvaluation: string;
-  notes: string;
-  date: string;
-  channel?: string; // Added channel field
-  [key: string]: string | number | undefined; // Allow additional dynamic fields
+  [key: string]: string | undefined;
 }
 
 // Function to fetch data from the Google Sheet
-export const fetchCenterData = async (): Promise<CenterData[]> => {
+export const fetchCenterData = async (): Promise<{headers: string[], data: CenterData[]}> => {
   try {
     // For CSV, we'll use a direct CSV export URL from Google Sheets
     const sheetId = '1kz4VPEAZWKR7M8GDgZ9aHz3ig7LX-vSi35kuNCDU9PM';
@@ -36,70 +28,36 @@ export const fetchCenterData = async (): Promise<CenterData[]> => {
     const rows = parseCSV(csvText);
     console.log("Parsed CSV rows:", rows.length);
     
-    if (rows.length < 2) {
+    if (rows.length < 1) {
       console.error("Not enough rows in CSV data");
       throw new Error("Invalid CSV data structure");
     }
 
-    // Find the row with actual headers (around row 8)
-    let headerRowIndex = -1;
-    for (let i = 0; i < rows.length; i++) {
-      if (rows[i].some(cell => cell === "Center Name" || cell === "clasroom name" || cell === "Channel")) {
-        headerRowIndex = i;
-        break;
-      }
-    }
+    // Use the first row as headers
+    const headers = rows[0].map(header => header.trim());
+    console.log("Using headers from first row:", headers);
     
-    if (headerRowIndex === -1) {
-      console.error("Header row not found in CSV data");
-      throw new Error("Invalid CSV structure: header row not found");
-    }
-    
-    // Use the found header row
-    const headers = rows[headerRowIndex];
-    console.log("Using headers:", headers);
-    
-    // Skip empty rows and use only rows with actual data
-    const centerData: CenterData[] = [];
-    let centerName = ""; // Track current center name for empty cells
-    
-    for (let i = headerRowIndex + 1; i < rows.length; i++) {
-      const row = rows[i];
+    // Map the rest of the rows to data objects
+    const centerData: CenterData[] = rows.slice(1).map((row, index) => {
+      const item: CenterData = { id: index.toString() };
       
-      // Skip empty rows or rows with insufficient data
-      if (row.length < 3 || row.every(cell => !cell.trim())) {
-        continue;
-      }
+      // Map each cell to its corresponding header
+      headers.forEach((header, i) => {
+        if (i < row.length) {
+          item[header] = row[i];
+        }
+      });
       
-      // Update current center name if this row has one
-      if (row[1] && row[1].trim()) {
-        centerName = row[1].trim();
-      }
-      
-      const item: CenterData = {
-        id: (centerData.length).toString(),
-        center: centerName,
-        classroom: row[2] || "",
-        dataGatheringComplete: row[4] || "",
-        reEvaluation: row[8] || "",
-        notes: "", // No notes field in the sheet
-        date: row[7] || "", // Using uploaded to firebase date
-        channel: row[3] || ""
-      };
-      
-      // Only add rows that have at least a classroom or channel value
-      if (item.classroom || item.channel) {
-        centerData.push(item);
-      }
-    }
+      return item;
+    });
     
     console.log("Mapped center data:", centerData);
     
-    return centerData;
+    return { headers, data: centerData };
   } catch (error) {
     console.error("Error fetching center data:", error);
     toast.error("Failed to fetch center data");
-    return [];
+    return { headers: [], data: [] };
   }
 };
 
@@ -133,39 +91,10 @@ function parseCSV(text: string): string[][] {
   }).filter(row => row.length > 0 && row.some(cell => cell.trim() !== ''));
 }
 
-// Function to sort and process center data with priority for highlighted rows
-export const processCenterData = (data: CenterData[]): CenterData[] => {
-  // Helper function to check if a row should be highlighted
-  const shouldHighlight = (item: CenterData): boolean => {
-    return (
-      item.dataGatheringComplete?.toLowerCase() === 'no' ||
-      item.reEvaluation?.toLowerCase() === 'yes' // Changed to highlight rows needing reevaluation
-    );
-  };
-  
-  // Sort data: highlighted rows first, then alphabetically by center and classroom
-  return [...data].sort((a, b) => {
-    const aHighlight = shouldHighlight(a);
-    const bHighlight = shouldHighlight(b);
-    
-    // First sort by highlight status
-    if (aHighlight && !bHighlight) return -1;
-    if (!aHighlight && bHighlight) return 1;
-    
-    // Then sort by center name
-    if (a.center !== b.center) {
-      return a.center.localeCompare(b.center);
-    }
-    
-    // Then by classroom
-    return a.classroom.localeCompare(b.classroom);
-  });
-};
-
 // Function to determine if a row should be highlighted
 export const isHighlightedRow = (item: CenterData): boolean => {
-  return (
-    item.dataGatheringComplete?.toLowerCase() === 'no' ||
-    item.reEvaluation?.toLowerCase() === 'yes' // Changed to highlight rows needing reevaluation
+  // We'll keep this function simple since we don't know the exact column names yet
+  return Object.values(item).some(value => 
+    value?.toLowerCase() === 'no' || value?.toLowerCase() === 'yes'
   );
 };
