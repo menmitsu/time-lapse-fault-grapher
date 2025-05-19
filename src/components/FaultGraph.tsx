@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SortableTable from './SortableTable';
 import BalenaCacheContent from './BalenaCacheContent';
 import CleaningStatistics from './CleaningStatistics';
+import AllStatistics from './AllStatistics';
 import { useEffect } from 'react';
 
 const FaultGraph = () => {
@@ -50,6 +51,7 @@ const FaultGraph = () => {
           <TabsTrigger value="frameStats">Flask Statistics</TabsTrigger>
           <TabsTrigger value="capturingContainer">Capturing Statistics</TabsTrigger>
           <TabsTrigger value="cleaningStats">Cleaning Statistics</TabsTrigger>
+          <TabsTrigger value="allStats">All Stats</TabsTrigger>
         </TabsList>
       </div>
       
@@ -112,6 +114,10 @@ const FaultGraph = () => {
       
       <TabsContent value="cleaningStats">
         <CleaningStatistics />
+      </TabsContent>
+      
+      <TabsContent value="allStats">
+        <AllStatistics />
       </TabsContent>
     </Tabs>
   );
