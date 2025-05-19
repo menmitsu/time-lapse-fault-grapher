@@ -1,3 +1,4 @@
+
 import { toast } from "@/components/ui/sonner";
 
 export interface CenterData {
@@ -91,10 +92,19 @@ function parseCSV(text: string): string[][] {
   }).filter(row => row.length > 0 && row.some(cell => cell.trim() !== ''));
 }
 
-// Function to determine if a row should be highlighted
+// Function to determine if a row should be highlighted based on specific conditions
 export const isHighlightedRow = (item: CenterData): boolean => {
-  // We'll keep this function simple since we don't know the exact column names yet
-  return Object.values(item).some(value => 
-    value?.toLowerCase() === 'no' || value?.toLowerCase() === 'yes'
-  );
+  // Check for Data Gathering Completion = "No"
+  const dataGatheringCompletion = item["Data Gathering Completion"]?.trim().toLowerCase();
+  if (dataGatheringCompletion === "no") {
+    return true;
+  }
+  
+  // Check for Reevaluation Needed = "Yes"
+  const reevaluationNeeded = item["Reevaluation Needed"]?.trim().toLowerCase();
+  if (reevaluationNeeded === "yes") {
+    return true;
+  }
+  
+  return false;
 };

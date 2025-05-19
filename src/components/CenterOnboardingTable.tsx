@@ -36,7 +36,7 @@ const CenterOnboardingTable = ({ headers, data }: CenterOnboardingTableProps) =>
             data.map((item) => (
               <TableRow 
                 key={item.id}
-                className={isHighlightedRow(item) ? "bg-red-50" : ""}
+                className={isHighlightedRow(item) ? "bg-red-100" : ""}
               >
                 {headers.map((header, index) => (
                   <TableCell key={index}>
