@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useCenterOnboardingData } from "../hooks/useCenterOnboardingData";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, RefreshCw } from "lucide-react";
@@ -13,14 +13,16 @@ interface CenterOnboardingProps {
 
 const CenterOnboarding = ({ isActive }: CenterOnboardingProps) => {
   const { data, isLoading, error, isUsingMockData, loadData } = useCenterOnboardingData();
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Only load data when the tab becomes active
+  // Only load data when the tab becomes active and hasn't been initialized
   useEffect(() => {
-    if (isActive) {
-      console.log("Center Onboarding tab is active, loading data...");
+    if (isActive && !isInitialized) {
+      console.log("Center Onboarding tab is active, loading data once...");
       loadData();
+      setIsInitialized(true);
     }
-  }, [isActive, loadData]);
+  }, [isActive, isInitialized, loadData]);
 
   return (
     <Card className="rounded-lg shadow-lg bg-white/50 backdrop-blur-sm border-white/20">

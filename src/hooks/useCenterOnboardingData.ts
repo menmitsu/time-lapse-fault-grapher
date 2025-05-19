@@ -1,11 +1,11 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { CenterData, fetchCenterData, processCenterData } from '../services/centerOnboardingService';
 import { toast } from "@/components/ui/sonner";
 
 export function useCenterOnboardingData() {
   const [data, setData] = useState<CenterData[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isUsingMockData, setIsUsingMockData] = useState<boolean>(false);
 
@@ -49,7 +49,11 @@ export function useCenterOnboardingData() {
     }
   ];
 
-  const loadData = async () => {
+  // Use useCallback to avoid unnecessary rerenders
+  const loadData = useCallback(async () => {
+    // Don't start loading if already in progress
+    if (isLoading) return;
+    
     setIsLoading(true);
     setError(null);
     try {
@@ -79,10 +83,7 @@ export function useCenterOnboardingData() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // No automatic loading - we'll load when the tab is selected
-  // This avoids unnecessary data fetching on initial load
+  }, [isLoading]); // Add isLoading as dependency to prevent multiple calls when already loading
 
   return {
     data,
