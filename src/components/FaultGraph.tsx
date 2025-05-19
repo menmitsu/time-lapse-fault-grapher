@@ -9,6 +9,7 @@ import SortableTable from './SortableTable';
 import BalenaCacheContent from './BalenaCacheContent';
 import CleaningStatistics from './CleaningStatistics';
 import AllStatistics from './AllStatistics';
+import CenterOnboarding from './CenterOnboarding';
 import { useEffect } from 'react';
 
 const FaultGraph = () => {
@@ -52,6 +53,7 @@ const FaultGraph = () => {
           <TabsTrigger value="capturingContainer">Capturing Statistics</TabsTrigger>
           <TabsTrigger value="cleaningStats">Cleaning Statistics</TabsTrigger>
           <TabsTrigger value="allStats">All Stats</TabsTrigger>
+          <TabsTrigger value="centerOnboarding">Center Onboarding</TabsTrigger>
         </TabsList>
       </div>
       
@@ -118,6 +120,10 @@ const FaultGraph = () => {
       
       <TabsContent value="allStats">
         <AllStatistics />
+      </TabsContent>
+
+      <TabsContent value="centerOnboarding">
+        <CenterOnboarding />
       </TabsContent>
     </Tabs>
   );
