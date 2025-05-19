@@ -22,10 +22,10 @@ const CenterOnboardingTable = ({ data }: CenterOnboardingTableProps) => {
           <TableRow>
             <TableHead>Center</TableHead>
             <TableHead>Classroom</TableHead>
+            <TableHead>Channel</TableHead>
             <TableHead>Data Gathering Complete</TableHead>
-            <TableHead>Re-evaluation</TableHead>
-            <TableHead>Notes</TableHead>
-            <TableHead>Date</TableHead>
+            <TableHead>Uploaded to Firebase</TableHead>
+            <TableHead>Re-evaluation Needed</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -43,6 +43,7 @@ const CenterOnboardingTable = ({ data }: CenterOnboardingTableProps) => {
               >
                 <TableCell className="font-medium">{item.center}</TableCell>
                 <TableCell>{item.classroom}</TableCell>
+                <TableCell>{item.channel}</TableCell>
                 <TableCell>
                   <Badge 
                     variant={item.dataGatheringComplete?.toLowerCase() === 'yes' ? "default" : "destructive"}
@@ -53,22 +54,17 @@ const CenterOnboardingTable = ({ data }: CenterOnboardingTableProps) => {
                     {item.dataGatheringComplete || 'Unknown'}
                   </Badge>
                 </TableCell>
+                <TableCell>{item.date}</TableCell>
                 <TableCell>
                   <Badge 
-                    variant={item.reEvaluation?.toLowerCase() === 'yes' ? "default" : "destructive"}
+                    variant={item.reEvaluation?.toLowerCase() === 'yes' ? "destructive" : "default"}
                     className={item.reEvaluation?.toLowerCase() === 'yes' 
-                      ? "bg-green-100 text-green-800 hover:bg-green-100" 
-                      : "bg-red-100 text-red-800 hover:bg-red-100"}
+                      ? "bg-red-100 text-red-800 hover:bg-red-100" 
+                      : "bg-green-100 text-green-800 hover:bg-green-100"}
                   >
-                    {item.reEvaluation || 'Unknown'}
+                    {item.reEvaluation || 'No'}
                   </Badge>
                 </TableCell>
-                <TableCell>
-                  <div className="max-w-xs truncate">
-                    {item.notes}
-                  </div>
-                </TableCell>
-                <TableCell>{item.date}</TableCell>
               </TableRow>
             ))
           )}

@@ -9,7 +9,8 @@ export interface CenterData {
   reEvaluation: string;
   notes: string;
   date: string;
-  [key: string]: string | number; // Allow additional dynamic fields
+  channel?: string; // Added channel field
+  [key: string]: string | number | undefined; // Allow additional dynamic fields
 }
 
 // Function to fetch data from the Google Sheet
@@ -40,31 +41,57 @@ export const fetchCenterData = async (): Promise<CenterData[]> => {
       throw new Error("Invalid CSV data structure");
     }
 
-    // First row is headers
-    const headers = rows[0];
+    // Find the row with actual headers (around row 8)
+    let headerRowIndex = -1;
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i].some(cell => cell === "Center Name" || cell === "clasroom name" || cell === "Channel")) {
+        headerRowIndex = i;
+        break;
+      }
+    }
     
-    // Map the rows to our interface
-    const centerData: CenterData[] = rows.slice(1).map((row, index) => {
+    if (headerRowIndex === -1) {
+      console.error("Header row not found in CSV data");
+      throw new Error("Invalid CSV structure: header row not found");
+    }
+    
+    // Use the found header row
+    const headers = rows[headerRowIndex];
+    console.log("Using headers:", headers);
+    
+    // Skip empty rows and use only rows with actual data
+    const centerData: CenterData[] = [];
+    let centerName = ""; // Track current center name for empty cells
+    
+    for (let i = headerRowIndex + 1; i < rows.length; i++) {
+      const row = rows[i];
+      
+      // Skip empty rows or rows with insufficient data
+      if (row.length < 3 || row.every(cell => !cell.trim())) {
+        continue;
+      }
+      
+      // Update current center name if this row has one
+      if (row[1] && row[1].trim()) {
+        centerName = row[1].trim();
+      }
+      
       const item: CenterData = {
-        id: index.toString(),
-        center: '',
-        classroom: '',
-        dataGatheringComplete: '',
-        reEvaluation: '',
-        notes: '',
-        date: ''
+        id: (centerData.length).toString(),
+        center: centerName,
+        classroom: row[2] || "",
+        dataGatheringComplete: row[4] || "",
+        reEvaluation: row[8] || "",
+        notes: "", // No notes field in the sheet
+        date: row[7] || "", // Using uploaded to firebase date
+        channel: row[3] || ""
       };
       
-      // Map each column to the corresponding header
-      headers.forEach((header, i) => {
-        if (i < row.length) {
-          const key = headerToKey(header);
-          item[key] = row[i];
-        }
-      });
-      
-      return item;
-    });
+      // Only add rows that have at least a classroom or channel value
+      if (item.classroom || item.channel) {
+        centerData.push(item);
+      }
+    }
     
     console.log("Mapped center data:", centerData);
     
@@ -106,28 +133,13 @@ function parseCSV(text: string): string[][] {
   }).filter(row => row.length > 0 && row.some(cell => cell.trim() !== ''));
 }
 
-// Helper function to convert header to camelCase key
-function headerToKey(header: string): string {
-  // Map Google Sheet headers to our interface properties
-  const headerMap: Record<string, string> = {
-    'Center': 'center',
-    'Classroom': 'classroom',
-    'Data Gathering Complete': 'dataGatheringComplete',
-    'Re-evaluation': 'reEvaluation',
-    'Notes': 'notes',
-    'Date': 'date'
-  };
-  
-  return headerMap[header] || header.toLowerCase().replace(/\s+/g, '');
-}
-
 // Function to sort and process center data with priority for highlighted rows
 export const processCenterData = (data: CenterData[]): CenterData[] => {
   // Helper function to check if a row should be highlighted
   const shouldHighlight = (item: CenterData): boolean => {
     return (
       item.dataGatheringComplete?.toLowerCase() === 'no' ||
-      item.reEvaluation?.toLowerCase() === 'no'
+      item.reEvaluation?.toLowerCase() === 'yes' // Changed to highlight rows needing reevaluation
     );
   };
   
@@ -154,6 +166,6 @@ export const processCenterData = (data: CenterData[]): CenterData[] => {
 export const isHighlightedRow = (item: CenterData): boolean => {
   return (
     item.dataGatheringComplete?.toLowerCase() === 'no' ||
-    item.reEvaluation?.toLowerCase() === 'no'
+    item.reEvaluation?.toLowerCase() === 'yes' // Changed to highlight rows needing reevaluation
   );
 };
