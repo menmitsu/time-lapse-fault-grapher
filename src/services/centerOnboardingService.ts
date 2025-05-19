@@ -94,17 +94,38 @@ function parseCSV(text: string): string[][] {
 
 // Function to determine if a row should be highlighted based on specific conditions
 export const isHighlightedRow = (item: CenterData): boolean => {
+  // Find case-insensitive column matches
+  const dataGatheringCompletionKey = findCaseInsensitiveKey(item, "Data Gathering Completion");
+  const reevaluationNeededKey = findCaseInsensitiveKey(item, "Reevaluation Needed");
+  
   // Check for Data Gathering Completion = "No"
-  const dataGatheringCompletion = item["Data Gathering Completion"]?.trim().toLowerCase();
-  if (dataGatheringCompletion === "no") {
-    return true;
+  if (dataGatheringCompletionKey) {
+    const value = item[dataGatheringCompletionKey]?.trim().toLowerCase();
+    if (value === "no") {
+      return true;
+    }
   }
   
   // Check for Reevaluation Needed = "Yes"
-  const reevaluationNeeded = item["Reevaluation Needed"]?.trim().toLowerCase();
-  if (reevaluationNeeded === "yes") {
-    return true;
+  if (reevaluationNeededKey) {
+    const value = item[reevaluationNeededKey]?.trim().toLowerCase();
+    if (value === "yes") {
+      return true;
+    }
   }
   
   return false;
 };
+
+// Helper function to find a key in an object in a case-insensitive way
+function findCaseInsensitiveKey(obj: CenterData, searchKey: string): string | undefined {
+  const lowerSearchKey = searchKey.toLowerCase();
+  
+  for (const key of Object.keys(obj)) {
+    if (key.toLowerCase() === lowerSearchKey) {
+      return key;
+    }
+  }
+  
+  return undefined;
+}
