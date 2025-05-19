@@ -18,6 +18,34 @@ const BalenaCacheContent = () => {
     cooldownActive
   } = useBalenaCacheData();
 
+  // Transform the BalenaCacheResponse object into an array of BalenaData objects
+  const transformedData = React.useMemo(() => {
+    if (!currentData) return [];
+    
+    return Object.entries(currentData).map(([location, data]) => {
+      // Calculate delay percentage
+      const delayPercentage = data.total_1s_frames_captured > 0
+        ? (data.total_delayed_frames / data.total_1s_frames_captured) * 100
+        : 0;
+      
+      // Extract server IP from location if needed
+      const serverIp = location.includes('_') 
+        ? location.split('_')[0] 
+        : '';
+      
+      return {
+        location: location.replace(/^\d+\w+_/, ''), // Remove prefix like "0MNYH_" if present
+        total_delayed_frames: data.total_delayed_frames,
+        total_1s_frames_captured: data.total_1s_frames_captured,
+        average_upload_time_ms: data.average_upload_time_ms,
+        min_upload_time_ms: data.min_upload_time_ms,
+        max_upload_time_ms: data.max_upload_time_ms,
+        delayPercentage,
+        serverIp
+      };
+    });
+  }, [currentData]);
+
   return (
     <Card className="rounded-lg shadow-lg bg-white/50 backdrop-blur-sm border-white/20">
       <CardContent className="p-6">
@@ -66,7 +94,7 @@ const BalenaCacheContent = () => {
         )}
 
         <div className="rounded-lg overflow-hidden border border-gray-100 shadow-sm">
-          <BalenaCacheTable data={currentData || {}} />
+          <BalenaCacheTable data={transformedData} />
         </div>
       </CardContent>
     </Card>
