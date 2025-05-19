@@ -8,6 +8,9 @@ export interface BalenaCacheData {
   total_reconnect_instances: number;
   weighted_avg_delay: number;
   median_delay: number;
+  average_upload_time_ms: number;
+  min_upload_time_ms: number;
+  max_upload_time_ms: number;
 }
 
 export interface BalenaCacheResponse {
