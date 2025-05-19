@@ -16,14 +16,16 @@ export interface CenterData {
 export const fetchCenterData = async (): Promise<CenterData[]> => {
   try {
     // Google Sheets URL to fetch as JSON
-    // We're using the Google Sheets API via a published-to-web sheet
+    // Using a published sheet URL that works with CORS
     const sheetId = '1kz4VPEAZWKR7M8GDgZ9aHz3ig7LX-vSi35kuNCDU9PM';
     const sheetGid = '1497227990';
     
-    // Using the sheets.googleapis.com endpoint to fetch the data
-    const response = await fetch(
-      `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${sheetGid}`
-    );
+    // Using the public sheet URL format that returns JSON
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${sheetGid}`;
+    
+    console.log("Fetching center data from:", url);
+    
+    const response = await fetch(url);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch data: ${response.status}`);
@@ -32,11 +34,30 @@ export const fetchCenterData = async (): Promise<CenterData[]> => {
     // Google's response is not pure JSON, it's like `/*O_o*/google.visualization.Query.setResponse({...});`
     // We need to extract the JSON object from this response
     const text = await response.text();
-    const jsonText = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+    console.log("Response text preview:", text.substring(0, 200));
+    
+    // Extract the JSON part
+    const jsonStartIndex = text.indexOf('{');
+    const jsonEndIndex = text.lastIndexOf('}') + 1;
+    
+    if (jsonStartIndex < 0 || jsonEndIndex <= 0) {
+      console.error("Failed to extract JSON from response:", text);
+      throw new Error("Invalid response format from Google Sheets");
+    }
+    
+    const jsonText = text.substring(jsonStartIndex, jsonEndIndex);
     const data = JSON.parse(jsonText);
     
+    console.log("Parsed data:", data);
+    
     // Parse the table data
+    if (!data.table || !data.table.cols || !data.table.rows) {
+      console.error("Unexpected data structure:", data);
+      throw new Error("Unexpected data structure from Google Sheets");
+    }
+    
     const headers = data.table.cols.map((col: any) => col.label);
+    console.log("Headers:", headers);
     
     const rows = data.table.rows.map((row: any) => {
       const rowData: any = {};
@@ -46,6 +67,8 @@ export const fetchCenterData = async (): Promise<CenterData[]> => {
       });
       return rowData;
     });
+    
+    console.log("Parsed rows:", rows);
     
     // Map to our interface structure
     const centerData: CenterData[] = rows.map((row: any, index: number) => ({
@@ -58,6 +81,8 @@ export const fetchCenterData = async (): Promise<CenterData[]> => {
       date: row['Date'] || '',
       ...row // Include all original fields too
     }));
+    
+    console.log("Mapped center data:", centerData);
     
     return centerData;
   } catch (error) {

@@ -1,4 +1,5 @@
 
+import { useState } from 'react';
 import { useFaultData } from '../hooks/useFaultData';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
@@ -6,13 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SortableTable from './SortableTable';
-import BalenaCacheContent from './BalenaCacheContent';
-import CleaningStatistics from './CleaningStatistics';
-import AllStatistics from './AllStatistics';
+import BalenaCacheContentWrapper from './BalenaCacheContentWrapper';
+import CleaningStatisticsWrapper from './CleaningStatisticsWrapper';
+import AllStatisticsWrapper from './AllStatisticsWrapper';
 import CenterOnboarding from './CenterOnboarding';
-import { useEffect } from 'react';
 
 const FaultGraph = () => {
+  const [activeTab, setActiveTab] = useState("frameStats");
   const {
     currentData,
     error,
@@ -21,12 +22,7 @@ const FaultGraph = () => {
     refreshData
   } = useFaultData();
 
-  // Add effect to fetch data on component mount
-  useEffect(() => {
-    refreshData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+  // Calculate table data for fault statistics tabs
   const tableData = currentData ? Object.entries(currentData).map(([location, data]) => {
     // Calculate frames missed and ensure it's never negative
     const framesMissed = Math.max(0, 
@@ -45,8 +41,17 @@ const FaultGraph = () => {
     };
   }) : [];
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    
+    // Only refresh fault data when switching to frameStats tab
+    if (value === "frameStats") {
+      refreshData();
+    }
+  };
+
   return (
-    <Tabs defaultValue="frameStats" className="w-full">
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
       <div className="flex justify-center mb-4">
         <TabsList>
           <TabsTrigger value="frameStats">Flask Statistics</TabsTrigger>
@@ -111,19 +116,19 @@ const FaultGraph = () => {
       </TabsContent>
       
       <TabsContent value="capturingContainer">
-        <BalenaCacheContent />
+        <BalenaCacheContentWrapper isActive={activeTab === "capturingContainer"} />
       </TabsContent>
       
       <TabsContent value="cleaningStats">
-        <CleaningStatistics />
+        <CleaningStatisticsWrapper isActive={activeTab === "cleaningStats"} />
       </TabsContent>
       
       <TabsContent value="allStats">
-        <AllStatistics />
+        <AllStatisticsWrapper isActive={activeTab === "allStats"} />
       </TabsContent>
 
       <TabsContent value="centerOnboarding">
-        <CenterOnboarding />
+        <CenterOnboarding isActive={activeTab === "centerOnboarding"} />
       </TabsContent>
     </Tabs>
   );

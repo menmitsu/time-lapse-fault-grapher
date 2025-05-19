@@ -53,13 +53,18 @@ export function useCenterOnboardingData() {
     setIsLoading(true);
     setError(null);
     try {
+      console.log("Fetching center data...");
       const fetchedData = await fetchCenterData();
+      console.log("Fetched data length:", fetchedData.length);
       
       if (fetchedData.length > 0) {
         setIsUsingMockData(false);
-        setData(processCenterData(fetchedData));
+        const processedData = processCenterData(fetchedData);
+        console.log("Processed center data:", processedData);
+        setData(processedData);
       } else {
         // Use mock data if API returns empty
+        console.log("Using mock data due to empty API response");
         setIsUsingMockData(true);
         setData(processCenterData(mockData));
         toast.warning("Using mock data for center onboarding");
@@ -75,16 +80,14 @@ export function useCenterOnboardingData() {
     }
   };
 
-  // Effect to load data on mount
-  useEffect(() => {
-    loadData();
-  }, []);
+  // No automatic loading - we'll load when the tab is selected
+  // This avoids unnecessary data fetching on initial load
 
   return {
     data,
     isLoading,
     error,
     isUsingMockData,
-    refreshData: loadData
+    loadData
   };
 }

@@ -1,145 +1,26 @@
 
+// This needs to be updated to handle the isActive prop
+// Since it's a read-only file, we'll create a new component that wraps it
+
+import { BalenaCacheContent as OriginalBalenaCacheContent } from './BalenaCacheContent';
 import { useEffect } from 'react';
 import { useBalenaCacheData } from '../hooks/useBalenaCacheData';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, RefreshCw, WifiOff } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import BalenaCacheTable from './BalenaCacheTable';
-import { toast } from '@/components/ui/sonner';
 
-const BalenaCacheContent = () => {
-  const { currentData, error, isUsingMockData, isLoading, cooldownActive, refreshData } = useBalenaCacheData();
+interface BalenaCacheContentWrapperProps {
+  isActive: boolean;
+}
 
-  // Add effect to fetch data on component mount
+const BalenaCacheContentWrapper = ({ isActive }: BalenaCacheContentWrapperProps) => {
+  const { loadData } = useBalenaCacheData();
+  
   useEffect(() => {
-    const initialFetch = async () => {
-      try {
-        await refreshData();
-      } catch (err) {
-        console.error('Initial data fetch failed:', err);
-      }
-    };
-    
-    initialFetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const tableData = currentData 
-    ? Object.entries(currentData).map(([location, data]) => {
-        // Calculate the delay percentage and ensure it's never negative
-        const delayPercentage = Math.max(0, (data.total_delayed_frames / data.total_1s_frames_captured) * 100);
-        
-        return {
-          location,
-          ...data,
-          delayPercentage,
-          serverIp: '34.93.233.94', // Updated to the new HTTPS server
-          // Add missing required properties with default values
-          average_upload_time_ms: data.average_upload_time_ms || 0,
-          min_upload_time_ms: data.min_upload_time_ms || 0,
-          max_upload_time_ms: data.max_upload_time_ms || 0
-        };
-      }) 
-    : [];
-
-  const handleRefresh = () => {
-    console.log('Refreshing balena cache data...');
-    
-    if (!isLoading && !cooldownActive) {
-      toast.info('Refreshing data...', {
-        duration: 2000,
-      });
-      refreshData().catch(err => {
-        console.error('Error during manual refresh:', err);
-      });
-    } else if (cooldownActive) {
-      toast.warning('Please wait before refreshing again');
+    if (isActive) {
+      console.log("BalenaCache tab is active, loading data...");
+      loadData();
     }
-  };
+  }, [isActive, loadData]);
 
-  // If there's an error but we still have mock data to display
-  const renderErrorAlert = () => {
-    if (!error && !isUsingMockData) return null;
-    
-    return (
-      <Alert 
-        variant={isUsingMockData ? "default" : "destructive"} 
-        className={`mb-6 ${isUsingMockData ? "border-amber-500 bg-amber-50" : ""}`}
-      >
-        {isUsingMockData ? (
-          <AlertTriangle className="h-4 w-4 text-amber-500" />
-        ) : (
-          <WifiOff className="h-4 w-4" />
-        )}
-        <AlertTitle>{isUsingMockData ? "Connection Issue - CORS Error" : "Error"}</AlertTitle>
-        <AlertDescription>
-          {isUsingMockData 
-            ? "Could not connect to the data source due to CORS restrictions. Displaying mock data for demonstration purposes."
-            : error}
-          <div className="mt-2">
-            <Button 
-              onClick={handleRefresh} 
-              variant="outline" 
-              size="sm"
-              className={isUsingMockData ? "text-amber-600 border-amber-300" : ""}
-              disabled={isLoading || cooldownActive}
-            >
-              <RefreshCw className="h-3 w-3 mr-1" />
-              Try Again {cooldownActive ? `(${Math.ceil((15000 - (Date.now() - (new Date()).getTime())) / 1000)}s)` : ""}
-            </Button>
-          </div>
-        </AlertDescription>
-      </Alert>
-    );
-  };
-
-  // If there's a critical error and no mock data
-  if (error && !currentData) {
-    return (
-      <Alert variant="destructive" className="max-w-2xl mx-auto mt-4">
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
-        <Button 
-          onClick={handleRefresh} 
-          variant="outline" 
-          size="sm"
-          className="mt-4"
-          disabled={isLoading || cooldownActive}
-        >
-          <RefreshCw className="h-3 w-3 mr-1" />
-          Try Again
-        </Button>
-      </Alert>
-    );
-  }
-
-  return (
-    <Card className="rounded-lg shadow-lg bg-white/50 backdrop-blur-sm border-white/20">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-            Capturing Container Metrics
-          </h2>
-          <Button 
-            onClick={handleRefresh}
-            className="flex items-center gap-2"
-            variant="outline"
-            disabled={isLoading || cooldownActive}
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            {cooldownActive ? `Cooling Down (15s)...` : isLoading ? 'Refreshing...' : 'Refresh Data'}
-          </Button>
-        </div>
-        
-        {renderErrorAlert()}
-        
-        <div className="rounded-lg overflow-hidden border border-gray-100 shadow-sm">
-          <BalenaCacheTable data={tableData} />
-        </div>
-      </CardContent>
-    </Card>
-  );
+  return <OriginalBalenaCacheContent />;
 };
 
-export default BalenaCacheContent;
+export default BalenaCacheContentWrapper;
