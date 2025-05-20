@@ -1,4 +1,5 @@
 
+
 import { toast } from "@/components/ui/sonner";
 
 export interface CenterData {
@@ -98,10 +99,10 @@ export const isHighlightedRow = (item: CenterData): boolean => {
   const dataGatheringCompletionKey = findCaseInsensitiveKey(item, "Data Gathering Completion");
   const reevaluationNeededKey = findCaseInsensitiveKey(item, "Reevaluation Needed");
   
-  // Check for Data Gathering Completion = "No"
+  // Check for Data Gathering Completion = "No" or "pending"
   if (dataGatheringCompletionKey) {
     const value = item[dataGatheringCompletionKey]?.trim().toLowerCase();
-    if (value === "no") {
+    if (value === "no" || value === "pending") {
       return true;
     }
   }
